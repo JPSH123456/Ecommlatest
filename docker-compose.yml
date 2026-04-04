@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "SuperSecretPassword123!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "SA", "-P", "SuperSecretPassword123!", "-C", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  product-service:
+    build: ./services/product-service
+    ports:
+      - "8003:8003"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  cart-service:
+    build: ./services/cart-service
+    ports:
+      - "8004:8004"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "8005:8005"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  payment-service:
+    build: ./services/payment-service
+    ports:
+      - "8006:8006"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  review-service:
+    build: ./services/review-service
+    ports:
+      - "8007:8007"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  wishlist-service:
+    build: ./services/wishlist-service
+    ports:
+      - "8008:8008"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_SERVER: sqlserver
+
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-service
+      - user-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - review-service
+      - wishlist-service
+    env_file: .env
+    environment:
+      AUTH_SERVICE_URL: "http://auth-service:8001"
+      USER_SERVICE_URL: "http://user-service:8002"
+      PRODUCT_SERVICE_URL: "http://product-service:8003"
+      CART_SERVICE_URL: "http://cart-service:8004"
+      ORDER_SERVICE_URL: "http://order-service:8005"
+      PAYMENT_SERVICE_URL: "http://payment-service:8006"
+      REVIEW_SERVICE_URL: "http://review-service:8007"
+      WISHLIST_SERVICE_URL: "http://wishlist-service:8008"
+      DB_SERVER: sqlserver
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
