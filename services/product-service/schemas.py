@@ -6,6 +6,7 @@ class ProductBase(BaseModel):
     description: Optional[str] = None
     price: float
     image_url: Optional[str] = None
+    video_url: Optional[str] = None
     category: Optional[str] = None
     stock: int = 0
 

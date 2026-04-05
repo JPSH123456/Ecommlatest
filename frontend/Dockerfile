@@ -15,6 +15,9 @@ FROM nginx:alpine
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Replace default Nginx config to support SPA fallback routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port (default 80 inside the container)
 EXPOSE 80
 

@@ -11,6 +11,8 @@ services:
       MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "SA", "-P", "SuperSecretPassword123!", "-C", "-Q", "SELECT 1"]
       interval: 10s
@@ -136,3 +138,6 @@ services:
       - "5173:80"
     depends_on:
       - api-gateway
+
+volumes:
+  sqlserver-data:

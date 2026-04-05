@@ -57,7 +57,11 @@ export default function Navbar() {
             </Link>
 
             <Link to="/admin/products" className="text-neutral-300 hover:text-white transition-colors duration-300">
-              Admin
+              Admin (Add Product)
+            </Link>
+
+            <Link to="/admin-dashboard" className="text-neutral-300 hover:text-white font-bold transition-colors duration-300">
+              Admin Dashboard
             </Link>
             
             <Link to="/orders" className="text-neutral-300 hover:text-white transition-colors duration-300">

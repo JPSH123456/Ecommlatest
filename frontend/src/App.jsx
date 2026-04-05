@@ -13,6 +13,7 @@ import Orders from './pages/Orders';
 import Wallet from './pages/Wallet';
 import Profile from './pages/Profile';
 import AdminAddProduct from './pages/AdminAddProduct';
+import AdminDashboard from './pages/AdminDashboard';
 import Wishlist from './pages/Wishlist';
 import ProductDetails from './pages/ProductDetails';
 
@@ -57,6 +58,7 @@ function App() {
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin/products" element={<AdminAddProduct />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/wishlist" element={<Wishlist />} />
           </Routes>
         </main>

@@ -81,7 +81,11 @@ export default function ProductDetails() {
            {user ? (
                <iframe 
                  className="w-full h-full"
-                 src={`https://www.youtube.com/embed/${['YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE'][parseInt(id || 0) % 5] || 'sY1S34973ZI'}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0`} 
+                 src={`https://www.youtube.com/embed/${product.video_url || [
+                   'YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE', 
+                   'kPmAJPUVY8I', 'F9Aha2-uTso', 'dHsV56I1GwE', 'Tnfs0MZsBBE',
+                   'IvAi9-yh8oA', 'nWqZEcRvhXs', 'SeC7DdD0bU8'
+                 ][parseInt(id || 0) % 12]}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0`} 
                  title="YouTube video player" 
                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                  allowFullScreen

@@ -71,3 +71,11 @@ def update_order_status(order_id: int, status_in: str, request: Request, db: Ses
     order.status = status_in
     db.commit()
     return {"detail": "Order status updated", "new_status": order.status}
+
+@app.get("/admin/orders", response_model=List[schemas.OrderResponse])
+def get_all_orders(db: Session = Depends(get_db)):
+    orders = db.query(models.Order).all()
+    for order in orders:
+        order.items = db.query(models.OrderItem).filter(models.OrderItem.order_id == order.id).all()
+    return orders
+

@@ -9,7 +9,8 @@ export default function AdminAddProduct() {
     price: '',
     category: '',
     stock: '',
-    image_url: ''
+    image_url: '',
+    video_url: ''
   });
   const [status, setStatus] = useState('');
   const navigate = useNavigate();
@@ -69,6 +70,10 @@ export default function AdminAddProduct() {
           <div>
             <label className="block text-sm font-semibold mb-2 text-gray-400">Thumbnail Image URL</label>
             <input required type="url" name="image_url" value={formData.image_url} onChange={handleChange} className="bg-[#333] border border-transparent focus:border-white focus:bg-[#444] text-white transition rounded w-full p-3 outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2 text-gray-400">YouTube Video ID (Optional)</label>
+            <input name="video_url" value={formData.video_url} onChange={handleChange} placeholder="e.g. kPmAJPUVY8I (Only ID, not full link)" className="bg-[#333] border border-transparent focus:border-white focus:bg-[#444] text-white transition rounded w-full p-3 outline-none" />
           </div>
           <button type="submit" className="bg-red-600 mt-6 font-bold text-white py-4 rounded hover:bg-red-700 transition duration-300">Publish Title</button>
         </form>

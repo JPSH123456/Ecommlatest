@@ -18,6 +18,13 @@ export default function ProductCard({ product, index = 0 }) {
     addToCart(product.id, 1);
   };
 
+  const fallbackVideos = [
+    'YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE', // Old trending
+    'kPmAJPUVY8I', 'F9Aha2-uTso', 'dHsV56I1GwE', 'Tnfs0MZsBBE',                 // New additions
+    'IvAi9-yh8oA', 'nWqZEcRvhXs', 'SeC7DdD0bU8'                                // Final additions (12 total)
+  ];
+  const videoId = product.video_url || fallbackVideos[parseInt(product.id || 0) % fallbackVideos.length];
+
   return (
     <div 
       className="bg-[#141414] relative z-30 w-[280px] h-[160px] cursor-pointer hover:scale-110 hover:z-50 transition-all duration-300 rounded-md overflow-hidden group shadow-lg" 
@@ -27,9 +34,9 @@ export default function ProductCard({ product, index = 0 }) {
     >
       {isHovered ? (
          <iframe 
-           src={`https://www.youtube.com/embed/${['YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE'][parseInt(product.id || 0) % 5]}?autoplay=1&mute=1&controls=0&start=0&end=120&loop=1&playlist=${['YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE'][parseInt(product.id || 0) % 5]}&iv_load_policy=3&disablekb=1&fs=0`}
+           src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&start=0&loop=1&playlist=${videoId}&iv_load_policy=3&disablekb=1&fs=0`}
            allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
-           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none scale-150" 
+           className="absolute inset-0 w-full h-full z-0 pointer-events-none scale-[1.15]" 
            frameBorder="0"
          />
       ) : (
