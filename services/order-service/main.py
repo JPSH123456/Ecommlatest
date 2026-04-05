@@ -13,6 +13,10 @@ app = FastAPI(title="Order Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Order Service", "status": "online"}
+
 @app.get("/orders", response_model=List[schemas.OrderResponse])
 def get_orders(request: Request, db: Session = Depends(get_db)):
     user_payload = verify_token(request)

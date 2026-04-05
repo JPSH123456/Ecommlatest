@@ -13,6 +13,10 @@ app = FastAPI(title="Cart Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Cart Service", "status": "online"}
+
 @app.get("/cart", response_model=List[schemas.CartItemResponse])
 def get_cart(request: Request, db: Session = Depends(get_db)):
     user_payload = verify_token(request)

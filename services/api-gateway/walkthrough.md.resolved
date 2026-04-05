@@ -1,0 +1,35 @@
+# API Gateway Fix Walkthrough
+
+I have implemented the fixes to resolve the `404 Not Found` errors and improve the health monitoring of your API Gateway.
+
+## Changes Made
+
+### 1. Added Root Route
+**File:** [main.py](file:///Users/puneetkumar/Desktop/Kubernetes/E-Comm-New/services/api-gateway/main.py)
+I added a `@app.get("/")` route to the FastAPI application. Now, requests to the root URL will return a friendly JSON response instead of a 404.
+
+```python
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to StreamShop API Gateway",
+        "status": "online",
+        "services": list(SERVICES.keys())
+    }
+```
+
+### 2. Configured Health Probes
+**File:** [deployments-fixed.yaml](file:///Users/puneetkumar/Desktop/Kubernetes/E-Comm-New/k8s/deployments-fixed.yaml)
+I added `livenessProbe` and `readinessProbe` to the `stream-api-deploy` deployment. Kubernetes will now use the `/health` endpoint to check if the pod is alive and ready to serve traffic.
+
+### 3. Synced Ingress Service Name
+**File:** [ingress.yaml](file:///Users/puneetkumar/Desktop/Kubernetes/E-Comm-New/k8s/ingress.yaml)
+I updated the backend service name from `api-gateway` to `stream-api-svc` to match the service definition in your deployment file. This ensures the Ingress controller can correctly route traffic to the gateway.
+
+## Verification
+- [x] API Gateway code updated.
+- [x] Deployment YAML updated with probes.
+- [x] Ingress YAML service name aligned.
+
+> [!TIP]
+> After applying these changes (using `kubectl apply -f k8s/`), wait a few moments for the pods to restart. You can check the logs again, and you should see `200 OK` for the health checks!

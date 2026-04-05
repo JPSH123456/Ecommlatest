@@ -52,3 +52,4 @@ If you want to run this in a more advanced, cloud-like environment using Kuberne
 - **Production-Ready UI**: The frontend is now packaged correctly for real-world usage, using Nginx instead of a slower development server.
 
 Enjoy building and exploring your new e-commerce platform!
+docker buildx build --no-cache --platform linux/amd64 -t aksacr.azurecr.io/wishlist-service:v2 --push .

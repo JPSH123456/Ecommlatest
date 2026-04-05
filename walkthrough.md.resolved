@@ -1,0 +1,59 @@
+# Walkthrough - HTTPS & Mixed Content Fixes
+
+I have implemented the necessary changes to fix the **Mixed Content** errors and insure correct **HTTPS redirection** across your microservices.
+
+## Changes Made
+
+### 1. API Gateway Middleware
+I added a custom middleware to `services/api-gateway/main.py` that explicitly trusts the `X-Forwarded-Proto` header. This ensures that even behind a proxy (Cloudflare/Kubernetes Ingress), FastAPI knows the original request was `https`.
+
+```python
+@app.middleware("http")
+async def forward_proto_middleware(request: Request, call_next):
+    if request.headers.get("x-forwarded-proto") == "https":
+        request.scope["scheme"] = "https"
+    return await call_next(request)
+```
+
+### 2. Dockerfile Updates (All Services)
+I updated the `CMD` for **all 9 microservices** to include the `--proxy-headers` flag and allow forwarded IPs from the proxy.
+
+**Modified Dockerfiles:**
+- [x] `api-gateway/Dockerfile`
+- [x] `auth-service/Dockerfile`
+- [x] `user-service/Dockerfile`
+- [x] `product-service/Dockerfile`
+- [x] `cart-service/Dockerfile`
+- [x] `order-service/Dockerfile`
+- [x] `payment-service/Dockerfile`
+- [x] `review-service/Dockerfile`
+- [x] `wishlist-service/Dockerfile`
+
+**Updated Command:**
+```dockerfile
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips='*'"]
+```
+
+## How to Deploy These Changes
+
+Since these changes are in the `Dockerfile` and source code, you need to rebuild and push the images:
+
+> [!IMPORTANT]
+> Run these commands from your terminal to update the cluster:
+
+```bash
+# 1. Build and push all services (You can do this for each service you modified)
+cd services/api-gateway && docker buildx build --platform linux/amd64 -t aksacr.azurecr.io/api-gateway:v1 --push .
+cd ../auth-service && docker buildx build --platform linux/amd64 -t aksacr.azurecr.io/auth-service:v1 --push .
+# ... repeat for other services if needed ...
+
+# 2. Restart the pods to pull the new images
+kubectl rollout restart deployment stream-api-deploy
+kubectl rollout restart deployment auth-service-ecomm
+```
+
+## Verification
+Once deployed, you can verify the fix by running:
+`curl -I -H "X-Forwarded-Proto: https" https://api.puneetdevops.online/auth`
+
+The `Location` header should now correctly show `https://api.puneetdevops.online/auth/` (instead of `http`).

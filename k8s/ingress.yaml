@@ -31,7 +31,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: api-gateway   # Traffic seedha Kubernetes ki API gateway service par girega
+            name: stream-api-svc   # Traffic seedha Kubernetes ki API gateway service par girega
             port: 
               number: 8000      # Humne Gateway ka port 8000 rakha tha
 

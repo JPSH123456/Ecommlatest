@@ -15,6 +15,10 @@ app = FastAPI(title="Auth Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Auth Service", "status": "online"}
+
 @app.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()

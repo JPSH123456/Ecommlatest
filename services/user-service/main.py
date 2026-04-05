@@ -12,6 +12,10 @@ app = FastAPI(title="User Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "User Service", "status": "online"}
+
 @app.get("/profile", response_model=schemas.UserProfileResponse)
 def get_profile(request: Request, db: Session = Depends(get_db)):
     user_payload = verify_token(request)

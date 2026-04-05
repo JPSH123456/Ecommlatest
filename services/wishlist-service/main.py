@@ -13,6 +13,10 @@ app = FastAPI(title="Wishlist Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Wishlist Service", "status": "online"}
+
 @app.get("/wishlist", response_model=List[schemas.WishlistItemResponse])
 def get_wishlist(request: Request, db: Session = Depends(get_db)):
     user_payload = verify_token(request)

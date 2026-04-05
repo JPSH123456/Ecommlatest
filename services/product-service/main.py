@@ -13,6 +13,10 @@ app = FastAPI(title="Product Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Product Service", "status": "online"}
+
 @app.get("/products", response_model=List[schemas.ProductResponse])
 def get_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     products = db.query(models.Product).order_by(models.Product.id).offset(skip).limit(limit).all()

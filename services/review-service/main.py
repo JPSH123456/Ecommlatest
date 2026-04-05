@@ -13,6 +13,10 @@ app = FastAPI(title="Review Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Review Service", "status": "online"}
+
 @app.get("/reviews/product/{product_id}", response_model=List[schemas.ReviewResponse])
 def get_product_reviews(product_id: int, db: Session = Depends(get_db)):
     reviews = db.query(models.Review).filter(models.Review.product_id == product_id).all()

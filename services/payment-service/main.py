@@ -14,6 +14,10 @@ app = FastAPI(title="Payment Service")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return {"service": "Payment Service", "status": "online"}
+
 @app.post("/payments", response_model=schemas.PaymentResponse)
 def process_payment(payment_in: schemas.PaymentCreate, request: Request, db: Session = Depends(get_db)):
     user_payload = verify_token(request)

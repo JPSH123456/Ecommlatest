@@ -11,9 +11,26 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API Gateway")
 
+# Force HTTPS for all redirects and proxies when behind a proxy
+@app.middleware("http")
+async def force_https_middleware(request: Request, call_next):
+    # Trusting X-Forwarded-Proto for HTTPS
+    if request.headers.get("x-forwarded-proto") == "https" or request.headers.get("x-forwarded-scheme") == "https":
+        request.scope["scheme"] = "https"
+    
+    response = await call_next(request)
+    
+    # Ensure redirects produced by FastAPI also use HTTPS
+    if response.status_code in (301, 302, 307, 308) and "location" in response.headers:
+        loc = response.headers["location"]
+        if loc.startswith("http://api.puneetdevops.online"):
+            response.headers["location"] = loc.replace("http://", "https://", 1)
+            
+    return response
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://jpshop.puneetdevops.online", "http://jpshop.puneetdevops.online", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,6 +78,14 @@ def save_audit_log(ip_address: str, method: str, service_name: str, path: str, s
 @app.get("/health")
 def health_check():
     return {"status": "gateway is live"}
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to StreamShop API Gateway",
+        "status": "online",
+        "services": list(SERVICES.keys())
+    }
 
 # Example simple proxy logic
 @app.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
