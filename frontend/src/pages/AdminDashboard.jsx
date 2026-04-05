@@ -6,6 +6,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,6 +27,9 @@ const AdminDashboard = () => {
       } else if (tab === 'products') {
         const res = await api.get('/product/products');
         setProducts(res.data);
+      } else if (tab === 'activity') {
+        const res = await api.get('/admin/audit-logs');
+        setAuditLogs(res.data);
       }
     } catch (err) {
       console.error(err);
@@ -38,7 +42,8 @@ const AdminDashboard = () => {
   const tabs = [
     { id: 'users', label: 'System Users' },
     { id: 'orders', label: 'All Orders' },
-    { id: 'products', label: 'Products Inventory' }
+    { id: 'products', label: 'Products Inventory' },
+    { id: 'activity', label: 'User Activity Trace' }
   ];
 
   return (
@@ -107,6 +112,16 @@ const AdminDashboard = () => {
                     <th className="px-6 py-4">Stock</th>
                   </tr>
                 )}
+                {activeTab === 'activity' && (
+                  <tr>
+                    <th className="px-6 py-4">Time</th>
+                    <th className="px-6 py-4">User</th>
+                    <th className="px-6 py-4">IP Address</th>
+                    <th className="px-6 py-4">Method/Service</th>
+                    <th className="px-6 py-4">Path</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {activeTab === 'users' && users.map((u) => (
@@ -152,6 +167,28 @@ const AdminDashboard = () => {
                   </tr>
                 ))}
 
+                {activeTab === 'activity' && auditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-[#2a2a2a] transition-colors border-b border-gray-800">
+                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-white">{log.user_email || 'Anonymous'}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-blue-400">{log.ip_address}</td>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-300 font-bold">{log.method}</span>
+                      <span className="ml-2 text-gray-500">[{log.service_name}]</span>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-400 max-w-[200px] truncate">
+                      {log.path}
+                    </td>
+                    <td className="px-6 py-4 transition-all">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${log.status_code < 400 ? 'bg-green-900/20 text-green-400' : 'bg-red-900/20 text-red-500'}`}>
+                        {log.status_code}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+
                 {/* Empty States */}
                 {activeTab === 'users' && users.length === 0 && (
                   <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-500">No users found.</td></tr>
@@ -161,6 +198,9 @@ const AdminDashboard = () => {
                 )}
                 {activeTab === 'products' && products.length === 0 && (
                   <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">No products found.</td></tr>
+                )}
+                {activeTab === 'activity' && auditLogs.length === 0 && (
+                  <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">No activity logs found.</td></tr>
                 )}
               </tbody>
             </table>

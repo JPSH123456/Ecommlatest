@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -83,3 +84,6 @@ def get_all_orders(db: Session = Depends(get_db)):
         order.items = db.query(models.OrderItem).filter(models.OrderItem.order_id == order.id).all()
     return orders
 
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -97,3 +98,6 @@ def deposit_funds(deposit: schemas.WalletDeposit, request: Request, db: Session 
     db.commit()
     db.refresh(wallet)
     return wallet
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

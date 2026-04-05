@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -39,3 +40,6 @@ def create_product(product_in: schemas.ProductCreate, request: Request, db: Sess
     db.commit()
     db.refresh(product)
     return product
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

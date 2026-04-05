@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -73,3 +74,6 @@ def clear_cart(request: Request, db: Session = Depends(get_db)):
     db.query(models.CartItem).filter(models.CartItem.user_id == user_id).delete()
     db.commit()
     return {"detail": "Cart cleared"}
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

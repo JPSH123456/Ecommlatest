@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 import models, schemas
@@ -42,3 +43,6 @@ def update_profile(profile_in: schemas.UserProfileCreate, request: Request, db: 
     db.commit()
     db.refresh(profile)
     return profile
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

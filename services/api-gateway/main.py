@@ -2,6 +2,8 @@ import os
 from fastapi import FastAPI, Request, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
+import jwt  # For decoding user info
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from database import engine, Base, SessionLocal
 from models import AuditLog
@@ -45,6 +47,7 @@ ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:8005")
 PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8006")
 REVIEW_SERVICE_URL = os.getenv("REVIEW_SERVICE_URL", "http://review-service:8007")
 WISHLIST_SERVICE_URL = os.getenv("WISHLIST_SERVICE_URL", "http://wishlist-service:8008")
+VAULT_SERVICE_URL = os.getenv("VAULT_SERVICE_URL", "http://vault-service:8009")
 
 SERVICES = {
     "auth": AUTH_SERVICE_URL,
@@ -55,15 +58,17 @@ SERVICES = {
     "payment": PAYMENT_SERVICE_URL,
     "review": REVIEW_SERVICE_URL,
     "wishlist": WISHLIST_SERVICE_URL,
+    "vault": VAULT_SERVICE_URL,
 }
 
-def save_audit_log(ip_address: str, method: str, service_name: str, path: str, status_code: int):
+def save_audit_log(ip_address: str, method: str, service_name: str, path: str, status_code: int, user_email: str = None):
     """Background task to safely save request logs without blocking the proxy"""
     db = SessionLocal()
     try:
         log_entry = AuditLog(
             ip_address=ip_address,
             method=method,
+            user_email=user_email,
             service_name=service_name,
             path=path,
             status_code=status_code
@@ -87,6 +92,12 @@ async def root():
         "services": list(SERVICES.keys())
     }
 
+@app.get("/admin/audit-logs")
+def get_audit_logs(db: Session = Depends(get_db)):
+    # Returns last 100 logs for admin view
+    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
+    return logs
+
 # Example simple proxy logic
 @app.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def route_request(service_name: str, path: str, request: Request, background_tasks: BackgroundTasks):
@@ -104,6 +115,21 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
     body = await request.body()
     client_ip = request.client.host if request.client else "unknown"
     
+    # Extract user from JWT if available
+    user_email = "Anonymous"
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            # We only decode, not verify here (verification happens in services)
+            payload = jwt.decode(token, options={"verify_signature": False})
+            user_email = payload.get("sub", "Unknown")
+        except:
+            pass
+
+    # Forward the user identity to microservices
+    headers["X-User-Email"] = user_email
+
     async with httpx.AsyncClient() as client:
         try:
             proxy_response = await client.request(
@@ -119,6 +145,7 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 save_audit_log,
                 ip_address=client_ip,
                 method=request.method,
+                user_email=user_email,
                 service_name=service_name,
                 path=path,
                 status_code=proxy_response.status_code
@@ -135,8 +162,12 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 save_audit_log,
                 ip_address=client_ip,
                 method=request.method,
+                user_email=user_email,
                 service_name=service_name,
                 path=path,
                 status_code=503
             )
             return Response(status_code=503, content=f"Service unavailable: {str(e)}")
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

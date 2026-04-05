@@ -9,6 +9,7 @@ class AuditLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     ip_address = Column(String(50))
     method = Column(String(10))
+    user_email = Column(String(100), nullable=True) # Kon-2 si karke...
     service_name = Column(String(50))
     path = Column(String(255))
     status_code = Column(Integer)

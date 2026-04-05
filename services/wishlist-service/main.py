@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -58,3 +59,6 @@ def remove_from_wishlist(product_id: int, request: Request, db: Session = Depend
         db.delete(item)
         db.commit()
     return {"detail": "Removed from wishlist"}
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

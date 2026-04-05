@@ -479,6 +479,7 @@ spec:
   selector:
     app: review-service
 ---
+---
 # Wishlist Service
 apiVersion: apps/v1
 kind: Deployment
@@ -530,3 +531,52 @@ spec:
     targetPort: 8008
   selector:
     app: wishlist-service
+---
+# Vault Service (Personal Data)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-service-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault-service
+  template:
+    metadata:
+      labels:
+        app: vault-service
+    spec:
+      containers:
+      - name: vault-service-cnt
+        image: aksacr.azurecr.io/vault-service:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+        ports:
+        - containerPort: 8009
+        env:
+        - name: DATABASE_URL
+          value: Driver={ODBC Driver 18 for SQL Server};Server=tcp:ecommserveraks.database.windows.net,1433;Database=ecommdb;Uid=ecommadmin;Pwd=admin@123@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;
+        - name: STORAGE_PATH
+          value: "/mnt/personal-vault"
+        volumeMounts:
+        - name: vault-storage
+          mountPath: "/mnt/personal-vault"
+      volumes:
+      - name: vault-storage
+        persistentVolumeClaim:
+          claimName: personal-vault-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-service
+spec:
+  ports:
+  - port: 8009
+    targetPort: 8009
+  selector:
+    app: vault-service

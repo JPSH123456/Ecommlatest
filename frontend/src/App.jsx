@@ -16,6 +16,8 @@ import AdminAddProduct from './pages/AdminAddProduct';
 import AdminDashboard from './pages/AdminDashboard';
 import Wishlist from './pages/Wishlist';
 import ProductDetails from './pages/ProductDetails';
+import Vault from './pages/Vault';
+import Footer from './components/Footer';
 
 function App() {
   const setUser = useStore(state => state.setUser);
@@ -60,8 +62,10 @@ function App() {
             <Route path="/admin/products" element={<AdminAddProduct />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/vault" element={<Vault />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );

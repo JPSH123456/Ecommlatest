@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -53,3 +54,6 @@ def get_all_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
     return users
 
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)

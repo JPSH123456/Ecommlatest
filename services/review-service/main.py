@@ -1,3 +1,4 @@
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -35,3 +36,6 @@ def create_review(review_in: schemas.ReviewCreate, request: Request, db: Session
     db.commit()
     db.refresh(review)
     return review
+
+# Expose metrics for Prometheus
+Instrumentator().instrument(app).expose(app)
