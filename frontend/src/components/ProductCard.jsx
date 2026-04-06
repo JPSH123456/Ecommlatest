@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useStore from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
 export default function ProductCard({ product, index = 0 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [shouldPlay, setShouldPlay] = useState(false);
+  
   const addToCart = useStore((state) => state.addToCart);
   const user = useStore((state) => state.user);
   const navigate = useNavigate();
@@ -18,81 +20,92 @@ export default function ProductCard({ product, index = 0 }) {
     addToCart(product.id, 1);
   };
 
-  const fallbackVideos = [
-    'YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE', // Old trending
-    'kPmAJPUVY8I', 'F9Aha2-uTso', 'dHsV56I1GwE', 'Tnfs0MZsBBE',                 // New additions
-    'IvAi9-yh8oA', 'nWqZEcRvhXs', 'SeC7DdD0bU8'                                // Final additions (12 total)
-  ];
-  const videoId = product.video_url || fallbackVideos[parseInt(product.id || 0) % fallbackVideos.length];
+  const videoId = product.youtube_id || 'YyepU5ztLf4';
+
+  useEffect(() => {
+    let timeout;
+    if (isHovered) {
+      timeout = setTimeout(() => setShouldPlay(true), 600);
+    } else {
+      setShouldPlay(false);
+    }
+    return () => clearTimeout(timeout);
+  }, [isHovered]);
 
   return (
     <div 
-      className="bg-[#141414] relative z-30 w-[280px] h-[160px] cursor-pointer hover:scale-110 hover:z-50 transition-all duration-300 rounded-md overflow-hidden group shadow-lg" 
-      onClick={() => navigate(`/product/${product.id}`)}
+      className="relative w-full h-full group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => navigate(`/product/${product.id}`)}
     >
-      {isHovered ? (
-         <iframe 
-           src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&start=0&loop=1&playlist=${videoId}&iv_load_policy=3&disablekb=1&fs=0`}
-           allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
-           className="absolute inset-0 w-full h-full z-0 pointer-events-none scale-[1.15]" 
-           frameBorder="0"
-         />
-      ) : (
-         <img 
-           src={product.image_url || 'https://images.unsplash.com/photo-1616530940355-351fabd9524b?auto=format&fit=crop&w=500&q=80'} 
-           alt={product.name} 
-           className="absolute inset-0 w-full h-full object-cover z-0" 
-         />
-      )}
-      
-      {/* Title display when NOT hovered */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black flex items-end p-2 z-10 transition-opacity duration-300 group-hover:opacity-0">
-          <span className="font-bold text-white text-sm drop-shadow-md">{product.name}</span>
-      </div>
-
-      {/* Hover Content Overlay */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-3 gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-black via-black/80 to-transparent">
-        <h4 className="font-bold text-white text-sm line-clamp-1 leading-tight">{product.name}</h4>
+      {/* Base Card */}
+      <div className={`relative transition-all duration-300 ease-out h-full w-full rounded-md overflow-hidden bg-zinc-900 border border-transparent shadow-lg
+        ${isHovered ? 'scale-125 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border-zinc-700' : 'scale-100 z-10'}
+      `}>
         
-        <div className="flex items-center gap-2 mt-1">
-          <span className="font-extrabold text-green-500 text-xs text-shadow">98% Match</span>
-          <span className="border border-gray-500 text-gray-300 text-[10px] px-1 bg-black/50">${product.price}</span>
-          <span className="text-gray-300 text-xs italic">{product.category || 'Action'}</span>
+        {/* Media Container */}
+        <div className="relative aspect-video w-full overflow-hidden bg-black">
+            {shouldPlay ? (
+               <iframe 
+                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&start=5&loop=1&playlist=${videoId}&iv_load_policy=3&rel=0&modestbranding=1`}
+                 allow="autoplay; encrypted-media"
+                 className="absolute inset-0 w-full h-full scale-[1.3] pointer-events-none" 
+                 frameBorder="0"
+               />
+            ) : (
+               <img 
+                 src={product.image_url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`} 
+                 alt={product.name} 
+                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" 
+               />
+            )}
+            
+            {/* Gradient Overlay when NOT hovered */}
+            <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`} />
         </div>
-        
-        <div className="flex gap-2 w-full mt-2">
-            <button 
-              onClick={(e) => {
-                 e.stopPropagation();
-                 if(!user) navigate('/login');
-                 else alert("Playing trailer...");
-              }}
-              className="flex-1 bg-white text-black py-1 rounded-sm font-bold text-xs hover:bg-gray-200 transition flex items-center justify-center gap-1"
-            >
-                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                 Play
-            </button>
-            <button 
-              onClick={handleAddToCart} 
-              className="flex-1 bg-red-600 text-white py-1 rounded-sm font-bold text-xs hover:bg-red-700 transition"
-            >
-              Add
-            </button>
-            <button 
-              onClick={async (e) => {
-                e.stopPropagation();
-                if(!user) return navigate('/login');
-                try {
-                  await api.post('/wishlist/wishlist', { product_id: product.id });
-                  alert('Added to wishlist!');
-                } catch(err) {} 
-              }} 
-              className="bg-zinc-800 text-white w-7 flex items-center justify-center rounded-full hover:bg-zinc-600 border border-zinc-600 transition"
-            >
-               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>            
-            </button>
+
+        {/* Hover Info Section */}
+        <div className={`absolute bottom-0 left-0 right-0 bg-zinc-900 p-3 transition-all duration-300 transform rounded-b-md
+          ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
+        `}>
+          <div className="flex gap-2 items-center mb-3">
+             <button 
+                onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+                className="h-8 w-8 rounded-full bg-white text-black hover:bg-neutral-200 transition flex items-center justify-center active:scale-90 shadow-md"
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+             </button>
+             <button 
+                onClick={handleAddToCart}
+                className="h-8 w-8 rounded-full border-2 border-zinc-500 text-white hover:border-white transition flex items-center justify-center bg-transparent active:scale-95"
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+             </button>
+             <button 
+                onClick={(e) => { e.stopPropagation(); }}
+                className="h-8 w-8 rounded-full border-2 border-zinc-500 text-white hover:border-white transition flex items-center justify-center bg-transparent active:scale-95"
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+             </button>
+             <button className="h-8 w-8 rounded-full border-2 border-zinc-500 text-white hover:border-white transition flex items-center justify-center bg-transparent ml-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 9l6 6 6-6"/></svg>
+             </button>
+          </div>
+          
+          <div className="space-y-1">
+             <div className="flex items-center gap-2">
+                <span className="text-green-500 font-bold text-xs uppercase">98% Match</span>
+                <span className="text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded">16+</span>
+                <span className="text-zinc-400 text-[10px]">2h 15m</span>
+             </div>
+             <p className="text-white font-bold text-sm tracking-tight truncate">{product.name}</p>
+          </div>
+        </div>
+
+        {/* Static Title (Visible when NOT hovered) */}
+        <div className={`absolute bottom-3 left-3 right-3 transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+           <p className="text-white font-bold text-sm drop-shadow-md truncate">{product.name}</p>
         </div>
       </div>
     </div>

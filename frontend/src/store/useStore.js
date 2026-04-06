@@ -4,11 +4,16 @@ import api from '../api/axios';
 const useStore = create((set) => ({
   user: null,
   activeProfile: null,
+  profiles: [
+    { name: 'Puneet Sharma', img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Puneet&backgroundColor=b6e3f4', isKids: false },
+    { name: 'Children', img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kids&backgroundColor=c0aede', isKids: true }
+  ],
   cart: [],
   cartCount: 0,
   
   setUser: (user) => set({ user }),
   setActiveProfile: (profile) => set({ activeProfile: profile }),
+  addProfile: (newProfile) => set((state) => ({ profiles: [...state.profiles, newProfile] })),
   logout: () => {
     localStorage.removeItem('token');
     set({ user: null, activeProfile: null, cart: [], cartCount: 0 });

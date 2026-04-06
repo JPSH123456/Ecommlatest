@@ -6,6 +6,7 @@ import useStore from '../store/useStore';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState(null);
   
@@ -18,7 +19,7 @@ export default function Login() {
     try {
       if (isRegistering) {
         // Step 1: Register
-        await api.post('/auth/register', { email, password });
+        await api.post('/auth/register', { email, password, full_name: fullName });
       }
       
       // Step 2: Login via form data (OAuth2PasswordRequestForm expects URLSearchParams)
@@ -63,6 +64,16 @@ export default function Login() {
         )}
 
         <form onSubmit={handleAuth} className="flex flex-col gap-4">
+          {isRegistering && (
+            <input 
+              type="text" 
+              placeholder="Full Name"
+              value={fullName} 
+              onChange={e => setFullName(e.target.value)}
+              className="w-full bg-[#333] text-white rounded p-4 outline-none focus:bg-[#444] transition"
+              required
+            />
+          )}
           <input 
             type="email" 
             placeholder="Email or phone number"
@@ -85,6 +96,20 @@ export default function Login() {
           <button type="submit" className="w-full bg-red-600 text-white font-bold rounded py-4 mt-6 hover:bg-red-700 transition duration-300">
             {isRegistering ? 'Create Account' : 'Sign In'}
           </button>
+
+          {/* Demo Login Button for Localhost Demo - Only shown in DEV mode */}
+          {import.meta.env.VITE_APP_MODE === 'dev' && (
+            <button 
+              type="button"
+              onClick={() => {
+                setUser({ email: 'puneet@example.com' });
+                navigate('/');
+              }}
+              className="w-full bg-blue-600/30 text-blue-400 border border-blue-600 font-bold rounded py-2 mt-2 hover:bg-blue-600/50 transition duration-300 text-sm"
+            >
+              🚀 DEMO MODE: Skip Backend
+            </button>
+          )}
         </form>
 
         <div className="mt-4 flex justify-between text-[#b3b3b3] text-sm">

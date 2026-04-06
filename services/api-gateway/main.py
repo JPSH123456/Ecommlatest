@@ -1,15 +1,28 @@
 import os
-from fastapi import FastAPI, Request, Response, BackgroundTasks
+from fastapi import FastAPI, Request, Response, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import jwt  # For decoding user info
+from sqlalchemy.orm import Session
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from database import engine, Base, SessionLocal
+from database import engine, Base, SessionLocal, get_db
 from models import AuditLog
 
 # Create DB tables if they don't exist
 Base.metadata.create_all(bind=engine)
+
+# Getting service URLs and hosts from env
+API_HOST = os.getenv("API_HOST", "api.puneetdevops.online")
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8002")
+PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://product-service:8003")
+CART_SERVICE_URL = os.getenv("CART_SERVICE_URL", "http://cart-service:8004")
+ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:8005")
+PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8006")
+REVIEW_SERVICE_URL = os.getenv("REVIEW_SERVICE_URL", "http://review-service:8007")
+WISHLIST_SERVICE_URL = os.getenv("WISHLIST_SERVICE_URL", "http://wishlist-service:8008")
+VAULT_SERVICE_URL = os.getenv("VAULT_SERVICE_URL", "http://vault-service:8009")
 
 app = FastAPI(title="API Gateway")
 
@@ -25,7 +38,7 @@ async def force_https_middleware(request: Request, call_next):
     # Ensure redirects produced by FastAPI also use HTTPS
     if response.status_code in (301, 302, 307, 308) and "location" in response.headers:
         loc = response.headers["location"]
-        if loc.startswith("http://api.puneetdevops.online"):
+        if loc.startswith(f"http://{API_HOST}"):
             response.headers["location"] = loc.replace("http://", "https://", 1)
             
     return response
@@ -38,16 +51,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Getting service URLs from env or using defaults
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
-USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8002")
-PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://product-service:8003")
-CART_SERVICE_URL = os.getenv("CART_SERVICE_URL", "http://cart-service:8004")
-ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:8005")
-PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8006")
-REVIEW_SERVICE_URL = os.getenv("REVIEW_SERVICE_URL", "http://review-service:8007")
-WISHLIST_SERVICE_URL = os.getenv("WISHLIST_SERVICE_URL", "http://wishlist-service:8008")
-VAULT_SERVICE_URL = os.getenv("VAULT_SERVICE_URL", "http://vault-service:8009")
 
 SERVICES = {
     "auth": AUTH_SERVICE_URL,

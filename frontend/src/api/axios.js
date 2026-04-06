@@ -2,8 +2,7 @@ import axios from 'axios';
 
 // Connect to the API Gateway at port 8000
 const api = axios.create({
-  // baseURL: 'http://localhost:8000',
-  baseURL: 'https://api.puneetdevops.online',
+  baseURL: import.meta.env.VITE_API_HOST || 'http://localhost:8000',
 });
 
 api.interceptors.request.use((config) => {

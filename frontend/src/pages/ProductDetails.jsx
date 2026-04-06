@@ -14,6 +14,30 @@ export default function ProductDetails() {
   const [newReviewText, setNewReviewText] = useState('');
   const [rating, setRating] = useState(5);
 
+  // RESTORED KIDS CONTENT (Animal/Cartoon)
+  const KIDS_PRODUCTS = [
+    { id: 101, name: "Funny Monkey Story", category: "Jungle Fun", youtube_id: "f_C_W_pZ5E0", image_url: "https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=800" },
+    { id: 102, name: "The Lion King", category: "Learn with Animals", youtube_id: "D-vLd-L2C2o", image_url: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800" },
+    { id: 103, name: "Forest Adventure", category: "Jungle Fun", youtube_id: "6V0d06fD-6Y", image_url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800" },
+    { id: 104, name: "Playful Tiger", category: "Jungle Fun", youtube_id: "W-7w_F-Z6_w", image_url: "https://images.unsplash.com/photo-1508817628294-5a453fa0b8fb?w=800" },
+    { id: 105, name: "Fun Farm Songs", category: "Baby Songs", youtube_id: "_S-uX-6-_8-", image_url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800" },
+    { id: 106, name: "Zebra's Party", category: "Learn with Animals", youtube_id: "yM-G-E-O-G0", image_url: "https://images.unsplash.com/photo-1501705388883-4ed8a543392c?w=800" },
+    { id: 107, name: "Baby Shark Dance", category: "Trending Now", youtube_id: "z0GKGpPUGfk", image_url: "https://images.unsplash.com/photo-1560275619-4662e366661b?w=800" },
+    { id: 108, name: "Magical Forest", category: "Trending Now", youtube_id: "l4S2_JSPr6w", image_url: "https://images.unsplash.com/photo-1511497584788-876760111969?w=800" },
+  ];
+
+  // MASTER CATALOG (STRICTLY MATCHED)
+  const DUMMY_PRODUCTS = [
+    { id: 201, name: "Shararat (Dhurandhar)", category: "Action & Adventure", youtube_id: "YyepU5ztLf4", image_url: "https://img.youtube.com/vi/YyepU5ztLf4/hqdefault.jpg", description: "High-octane action featuring Ranveer Singh." },
+    { id: 202, name: "Jaiye Sajana (Dhurandhar)", category: "Action & Adventure", youtube_id: "F2m4HPLvj-4", image_url: "https://img.youtube.com/vi/F2m4HPLvj-4/hqdefault.jpg", description: "Dhurandhar The Revenge - Musical High." },
+    { id: 203, name: "Jaan Se Guzarte Hain", category: "Action & Adventure", youtube_id: "IAONd2d_PDU", image_url: "https://img.youtube.com/vi/IAONd2d_PDU/hqdefault.jpg", description: "Lyrical saga of Dhurandhar The Revenge." },
+    { id: 204, name: "Dhurandhar (Full Album)", category: "Action & Adventure", youtube_id: "jo3p7O8n6is", image_url: "https://img.youtube.com/vi/jo3p7O8n6is/hqdefault.jpg", description: "The complete musical journey of a hero." },
+    { id: 205, name: "Mohe Mor Banaiyo Radha", category: "Devotional & Soulful", youtube_id: "IzC6Cgqcup0", image_url: "https://img.youtube.com/vi/IzC6Cgqcup0/hqdefault.jpg", description: "Peaceful Radha Krishna Bhajan." },
+    { id: 206, name: "Radhe Tere Charno Ki", category: "Devotional & Soulful", youtube_id: "lZQ5XzKrUFM", image_url: "https://img.youtube.com/vi/lZQ5XzKrUFM/hqdefault.jpg", description: "Soulful Radha Bhajan for inner peace." },
+    { id: 207, name: "Samay Samjhayega (Sad)", category: "Devotional & Soulful", youtube_id: "6ZwwapPikyQ", image_url: "https://img.youtube.com/vi/6ZwwapPikyQ/hqdefault.jpg", description: "Tum Prem Ho Sad Version - Radha Krishn." },
+    { id: 208, name: "Radha Apne Vrindavan Ko", category: "Devotional & Soulful", youtube_id: "zdVpB9m9GqI", image_url: "https://img.youtube.com/vi/zdVpB9m9GqI/hqdefault.jpg", description: "Another peaceful rendition of the Radha Bhajan." },
+  ];
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -27,18 +51,13 @@ export default function ProductDetails() {
       try {
           prodRes = await api.get(`/product/products/${id}`);
       } catch (err) {
-          // Intercept 404s for DUMMY_PRODUCTS so the UI continues working!
-          if (idx >= 9000) {
-              prodRes = { data: {
-                  id: idx,
-                  name: `Cinematic Feature ${idx - 8999}`,
-                  category: "Netflix Selection",
-                  price: 19.99,
-                  stock: 120,
-                  description: "A spectacular, action-packed feature presentation. The best in entertainment.",
-                  image_url: `https://images.unsplash.com/photo-${1500000000000 + ((idx-9000) * 12345678)}?auto=format&fit=crop&w=500&q=80`
-              }};
-          } else throw err;
+          const allProds = [...KIDS_PRODUCTS, ...DUMMY_PRODUCTS];
+          const match = allProds.find(p => p.id === idx);
+          if (match) {
+            prodRes = { data: { ...match, price: 19.99, stock: 100 } };
+          } else {
+            prodRes = { data: { ...DUMMY_PRODUCTS[0], id: idx } };
+          }
       }
 
       try {
@@ -71,128 +90,75 @@ export default function ProductDetails() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#141414] text-white flex justify-center items-center">Loading feature...</div>;
-  if (!product) return <div className="min-h-screen bg-[#141414] text-white flex justify-center items-center">Title not found.</div>;
+  if (loading) return <div className="min-h-screen bg-[#141414] text-white flex justify-center items-center font-bold text-xl animate-pulse">Loading StreamShop Feature...</div>;
+  if (!product) return <div className="min-h-screen bg-[#141414] text-white flex justify-center items-center">Title not found in StreamShop Catalog.</div>;
+
+  const videoId = product.youtube_id || 'YyepU5ztLf4';
 
   return (
     <div className="bg-[#141414] min-h-screen text-white pt-16">
        {/* Cinematic Player Section */}
-       <div className="w-full bg-black aspect-video relative shadow-2xl border-b border-zinc-800">
+       <div className="w-full bg-black aspect-video relative shadow-2xl border-b border-zinc-800 group overflow-hidden">
            {user ? (
                <iframe 
-                 className="w-full h-full"
-                 src={`https://www.youtube.com/embed/${product.video_url || [
-                   'YyepU5ztLf4', 'bjZp5amBugs', '7kJ6kQznl20', 'brzZcEZGN1Y', 'uIzx7VkrSWE', 
-                   'kPmAJPUVY8I', 'F9Aha2-uTso', 'dHsV56I1GwE', 'Tnfs0MZsBBE',
-                   'IvAi9-yh8oA', 'nWqZEcRvhXs', 'SeC7DdD0bU8'
-                 ][parseInt(id || 0) % 12]}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0`} 
-                 title="YouTube video player" 
+                 className="w-full h-full scale-[1.01]"
+                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3`} 
+                 title={product.name} 
                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                  allowFullScreen
                />
            ) : (
-               <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 border-b border-zinc-800 p-8 text-center">
-                  <h2 className="text-3xl font-extrabold mb-4">Authentication Required</h2>
-                  <p className="text-gray-400 mb-6">You must be logged in to watch feature presentations and trailers.</p>
-                  <button onClick={() => navigate('/login')} className="bg-red-600 px-8 py-3 rounded font-bold hover:bg-red-700 transition">Sign In to Play</button>
+               <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 border-b border-zinc-800 p-8 text-center bg-cover bg-center" style={{backgroundImage: `linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url(${product.image_url})`}}>
+                  <h2 className="text-4xl font-black mb-4 drop-shadow-lg">Stream Authentication Required</h2>
+                  <p className="text-gray-300 mb-8 max-w-md text-lg">You must sign in to watch full features and premium previews.</p>
+                  <button onClick={() => navigate('/login')} className="bg-white text-black px-12 py-4 rounded-md font-black text-lg hover:bg-neutral-200 transition-all transform hover:scale-105 active:scale-95 shadow-xl">Sign In to Stream Now</button>
                </div>
            )}
        </div>
 
        {/* Movie / Product Details */}
-       <div className="max-w-6xl mx-auto p-10 grid grid-cols-1 md:grid-cols-3 gap-12">
-            
-            {/* Main Info */}
-            <div className="md:col-span-2">
-                <h1 className="text-5xl font-black mb-4 drop-shadow-lg">{product.name}</h1>
-                <div className="flex items-center gap-4 mb-6">
-                    <span className="text-green-500 font-bold text-lg">98% Match</span>
-                    <span className="border border-gray-600 px-2 text-sm text-gray-300">HD / 4K</span>
-                    <span className="text-gray-300 italic">{product.category || 'Trending'}</span>
-                </div>
-                <p className="text-lg text-gray-300 leading-relaxed max-w-3xl">{product.description}</p>
-                <div className="mt-8">
-                    <button className="bg-white text-black font-bold px-8 py-3 rounded flex items-center gap-2 hover:bg-gray-200 transition">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                         Play Full Title
-                    </button>
-                </div>
-                
-                {/* Reviews Section */}
-                <div className="mt-16 border-t border-zinc-800 pt-10">
-                    <h3 className="text-2xl font-bold mb-6">User Reviews & Ratings</h3>
-                    
-                    {/* Add Review */}
-                    <form onSubmit={submitReview} className="mb-10 bg-black/60 border border-zinc-800 p-6 rounded">
-                        <h4 className="font-semibold mb-4 text-gray-300">Rate this title</h4>
-                        <div className="flex gap-4 mb-4">
-                            <select value={rating} onChange={e => setRating(parseInt(e.target.value))} className="bg-[#333] border-none rounded p-2 text-white outline-none">
-                                <option value={5}>5 Stars - Masterpiece</option>
-                                <option value={4}>4 Stars - Great</option>
-                                <option value={3}>3 Stars - Good</option>
-                                <option value={2}>2 Stars - Mediocre</option>
-                                <option value={1}>1 Star - Terrible</option>
-                            </select>
-                            <input 
-                              required
-                              type="text" 
-                              value={newReviewText} 
-                              onChange={e => setNewReviewText(e.target.value)}
-                              placeholder="Write your review..."
-                              className="bg-[#333] flex-1 rounded p-2 text-white outline-none focus:bg-[#444]"
-                            />
-                            <button className="bg-red-600 text-white px-6 font-bold rounded hover:bg-red-700 transition">Post</button>
-                        </div>
-                    </form>
-
-                    {/* Review List */}
-                    <div className="space-y-6">
-                        {reviews.length === 0 ? (
-                            <p className="text-gray-500">No reviews yet. Be the first to review!</p>
-                        ) : (
-                            reviews.map((rev, i) => (
-                                <div key={i} className="border-b border-zinc-800 pb-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="bg-zinc-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-gray-400">U{rev.user_id}</div>
-                                        <span className="text-red-500 font-black">{'★'.repeat(rev.rating)}{'☆'.repeat(5-rev.rating)}</span>
-                                    </div>
-                                    <p className="text-gray-300">"{rev.comment}"</p>
-                                </div>
-                            ))
-                        )}
+       <div className="max-w-6xl mx-auto p-10 grid grid-cols-1 md:grid-cols-3 gap-16">
+            <div className="md:col-span-2 space-y-8 animate-fade-in">
+                <div>
+                   <h1 className="text-6xl font-black mb-4 drop-shadow-2xl tracking-tighter leading-none">{product.name}</h1>
+                   <div className="flex items-center gap-6 text-sm font-bold">
+                        <span className="text-green-500 text-lg">99% Match</span>
+                        <span className="text-neutral-400">2024</span>
+                        <span className="border border-neutral-600 px-2 py-0.5 rounded-sm text-neutral-300">ULTRA HD 4K</span>
+                        <span className="text-zinc-500 uppercase tracking-widest">{product.category || 'Streaming'}</span>
                     </div>
+                </div>
+
+                <p className="text-xl text-neutral-300 leading-relaxed font-medium">{product.description || "A spectacular feature presentation from StreamShop catálogo."}</p>
+                
+                <div className="flex items-center gap-4">
+                    <button className="bg-white text-black font-black px-10 py-3 rounded flex items-center gap-3 hover:bg-neutral-200 transition transform hover:scale-105 active:scale-95 shadow-lg">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                         Watch Feature
+                    </button>
                 </div>
             </div>
 
-            {/* Sidebar / Buy Box */}
-            <div className="bg-black/80 border border-zinc-800 p-8 rounded h-min shadow-xl flex flex-col">
-                <img className="w-full object-cover rounded shadow-md border border-zinc-700 mb-6 drop-shadow-2xl" src={product.image_url || 'https://images.unsplash.com/photo-1616530940355-351fabd9524b?auto=format&fit=crop&w=500&q=80'} alt={product.name} />
-                <h4 className="font-extrabold text-3xl text-red-500 mb-2">${product.price}</h4>
-                <p className="text-sm text-gray-400 mb-6">{product.stock} copies remaining</p>
-                
+            {/* Sidebar */}
+            <div className="bg-neutral-900/40 border border-neutral-800 p-8 rounded-xl h-min shadow-2xl flex flex-col space-y-6 backdrop-blur-sm">
+                <div className="relative group overflow-hidden rounded-md shadow-2xl border border-neutral-700">
+                   <img className="w-full object-cover" src={product.image_url} alt={product.name} />
+                </div>
+                <div>
+                   <h4 className="font-black text-5xl text-white mb-1 tracking-tighter">${product.price}</h4>
+                   <p className="text-xs text-green-500 font-black uppercase tracking-tight">PREMIUM STREAM ACCESS</p>
+                </div>
                 <button 
                   onClick={async () => {
                       if (!user) return navigate('/login');
                       await api.post('/cart/cart', { product_id: product.id, quantity: 1 });
-                      alert('Added to Cart!');
+                      alert('Added to cart!');
                   }}
-                  className="w-full bg-red-600 text-white font-bold py-3 rounded hover:bg-red-700 transition shadow-lg mb-4"
+                  className="w-full bg-red-600 text-white font-black py-4 rounded hover:bg-red-700 transition"
                 >
-                  Add to Cart
-                </button>
-
-                <button 
-                  onClick={async () => {
-                      if (!user) return navigate('/login');
-                      await api.post('/wishlist/wishlist', { product_id: product.id });
-                      alert('Added to My List!');
-                  }}
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white font-bold py-3 rounded hover:bg-zinc-700 transition"
-                >
-                  + My List
+                  ADD TO WATCHLIST
                 </button>
             </div>
-
        </div>
     </div>
   );

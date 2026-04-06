@@ -74,6 +74,10 @@ spec:
     metadata:
       labels:
         app: stream-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: stream-api-cnt
@@ -129,6 +133,10 @@ spec:
     metadata:
       labels:
         app: auth-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: auth-service-cnt
@@ -181,6 +189,10 @@ spec:
     metadata:
       labels:
         app: cart-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8004"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: cart-service-cnt
@@ -233,6 +245,10 @@ spec:
     metadata:
       labels:
         app: user-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: user-service-cnt
@@ -285,6 +301,10 @@ spec:
     metadata:
       labels:
         app: product-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8003"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: product-service-cnt
@@ -337,6 +357,10 @@ spec:
     metadata:
       labels:
         app: order-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8005"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: order-service-cnt
@@ -389,6 +413,10 @@ spec:
     metadata:
       labels:
         app: payment-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8006"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: payment-service-cnt
@@ -441,6 +469,10 @@ spec:
     metadata:
       labels:
         app: review-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8007"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: review-service-cnt
@@ -494,6 +526,10 @@ spec:
     metadata:
       labels:
         app: wishlist-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8008"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: wishlist-service-cnt
@@ -546,6 +582,10 @@ spec:
     metadata:
       labels:
         app: vault-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8009"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: vault-service-cnt

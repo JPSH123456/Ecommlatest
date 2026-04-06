@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, Heart } from 'lucide-react';
+import { ShoppingCart, Search, User, Heart, Lock } from 'lucide-react';
 import useStore from '../store/useStore';
 
 export default function Navbar() {
@@ -48,6 +48,11 @@ export default function Navbar() {
       <div className="flex items-center space-x-6 text-sm font-semibold tracking-wide">
         {user ? (
           <div className="flex items-center space-x-6">
+            <Link to="/vault" className="text-neutral-300 hover:text-white transition-colors duration-300 flex items-center space-x-1">
+              <Lock size={14} className="text-red-600" />
+              <span>Vault</span>
+            </Link>
+
             <Link to="/profile" className="text-neutral-300 hover:text-white transition-colors duration-300">
               Profile
             </Link>
