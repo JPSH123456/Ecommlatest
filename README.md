@@ -1,123 +1,111 @@
-# 🛒 StreamShop: Netflix-Style Microservices E-Commerce Platform
+# 🛒 StreamShop: Elite Microservices E-Commerce Ecosystem
 
-![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/Python-3.10-blue.svg)
-![React](https://img.shields.io/badge/React-18-61DAFB.svg)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-AKS-326CE5.svg)
-![Azure](https://img.shields.io/badge/Cloud-Azure-0089D6.svg)
+[![Azure Monitor](https://img.shields.io/badge/Observability-Azure--Monitor-0089D6?logo=microsoftazure)](https://azure.microsoft.com/en-us/services/monitor/)
+[![Kubernetes](https://img.shields.io/badge/Orchestration-Kubernetes-326CE5?logo=kubernetes)](https://kubernetes.io/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/Frontend-React--18-61DAFB?logo=react)](https://reactjs.org/)
 
-**StreamShop** is a high-performance, modern e-commerce ecosystem built with a Netflix-inspired cinematic UI. It leverages a robust microservices architecture, containerized with Docker, and orchestrated on Kubernetes (Azure AKS).
-
----
-
-## ✨ Features
-
-- **🎬 Cinematic UI/UX**: Premium Netflix-style homepage with auto-playing video trailers on hover.
-- **🏗️ Microservices Architecture**: 9 independent services communicating via a centralized API Gateway.
-- **🔐 Seamless Auth**: Global authentication using OAuth2 & JWT.
-- **⚙️ Self-Healing Database**: Automatic schema synchronization (Auto-Migrations) on service startup.
-- **🚀 Optimized Builds**: Multi-stage Docker builds with persistent caching (< 10s build times).
-- **📊 Observability**: Metrics exposure via Prometheus and localized health monitoring.
-- **🛡️ Personal Vault**: Secure personal data storage with Azure File Share integration.
+**StreamShop** is a production-grade, distributed e-commerce platform featuring a Netflix-inspired UI and a high-performance microservices backend. This project showcases state-of-the-art patterns in **Cloud Native** development, **Distributed Tracing**, and **Autonomous Scaling**.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Elite Architecture Overview
 
-### Frontend
-- **React.js** (Vite)
-- **Vanilla CSS** (Premium Glassmorphism Design)
-- **Framer Motion** (Smooth Animations)
+The system is composed of **10 specialized microservices** orchestrated via Kubernetes, ensuring independent scalability and failure isolation.
 
-### Backend Services (Python/FastAPI)
-- **API Gateway**: Centralized routing & Audit logging.
-- **Auth Service**: User registration & JWT Security.
-- **Product Service**: Catalog management with YouTube trailer integration.
-- **Cart & Order Services**: E-commerce transactional flow.
-- **User & Review Services**: Profile management & Social Proof.
-- **Payment & Wallet**: Integrated wallet system with mock payment processing.
-- **Vault Service**: Secure file management.
+### The "Life of a Request" Flow
+In a technical interview, we describe the system through its dynamic flows:
 
-### Platform & DevOps
-- **Database**: Azure SQL Server / MS SQL.
-- **Containerization**: Docker (Buildx optimized).
-- **Orchestration**: Kubernetes (Azure Kubernetes Service).
-- **CI/CD**: Git-ready for automated pipelines.
+1.  **Entry Point**: Traffic hits the **Nginx Ingress** on host `shop.local`.
+2.  **Stateless Gateway**: The **API Gateway (FastAPI)** intercepts the request, validates the **JWT**, and performs **Context Injection** (injecting the `X-User-Email` header for downstream services).
+3.  **Background Audit**: Every request is logged via an asynchronous background task to the **AuditLog table** without blocking the main request path.
+4.  **Distributed Trace**: Using **Application Insights & OpenTelemetry**, a single Trace ID follows the request from the React Frontend to the SQL Database.
+5.  **Service Resolution**: Request is routed to the target service (e.g., `vault-service:8009`) using internal K8s DNS.
+6.  **Persistence Layer**: Data is persisted in **Azure SQL**, while binary files (Vault) are stored in **Kubernetes Persistent Volume Claims (PVC)**.
 
 ---
 
-## 🏗️ Architecture Overview
+## ✨ Features (The "Wow" Factors)
+
+- **🎬 Netflix-Style Discovery**: Cinematic product catalog with hover-to-play video trailers powered by YouTube CDN.
+- **🛰️ Full-Stack Observability**: Integrated telemetry using **Azure App Insights** (via `telemetry.js` and OpenTelemetry) and **Prometheus** metrics.
+- **🛡️ Security Triad**: 
+    - **Identity**: Stateless JWT-based authentication.
+    - **traceability**: Centralized API Audit Logging.
+    - **Isolation**: Physical directory-based file isolation in the Vault PVC.
+- **⚙️ Self-Healing Core**: Liveness/Readiness probes ensure traffic only hits healthy pods, with automatic restarts on failure.
+- **🚀 Autonomous DB**: Real-time schema synchronization (Auto-Migrations) built into every service.
+
+---
+
+## 🛠️ Tech Stack & Patterns
+
+| Layer | Technologies | architectural Patterns |
+| :--- | :--- | :--- |
+| **Frontend** | React (Vite), Tailwind, App Insights SDK | Component-Based UI, SPA, Client-Side Telemetry |
+| **API Layer** | FastAPI, httpx, AsyncIO | **API Gateway Pattern**, Proxying, Background Tasks |
+| **Compute** | Docker, Kubernetes (AKS) | Containerization, Pod Autoscaling (HPA) |
+| **Data** | Azure SQL, PVC (Azure File Share) | **Database-per-Service** (Logical Isolation) |
+| **Monitoring** | Prometheus, Grafana, OpenTelemetry | **Distributed Tracing**, Metric Aggregation |
+
+---
+
+## 📂 System Topology
 
 ```mermaid
 graph TD
-    A[Frontend React] --> B[API Gateway]
-    B --> C[Auth Service]
-    B --> D[Product Service]
-    B --> E[Order Service]
-    B --> F[Cart Service]
-    B --> G[User Service]
-    B --> H[Vault Service]
-    B --> I[Payment Service]
-    B --> J[Review Service]
-    B --> K[Wishlist Service]
-    C & D & E & F & G & I & J & K --- L[(Azure SQL Database)]
-    H --- M[Azure File Share]
+    User((User)) -->|HTTPS| Ingress[Nginx Ingress]
+    
+    subgraph Cluster [Kubernetes Ecosystem]
+        Ingress -->|Route| FE[Frontend - React]
+        Ingress -->|Route| GW[API Gateway - FastAPI]
+        
+        GW -->|Inject Header| Auth[Auth-Svc :8001]
+        GW -->|Audit Log| SQL[(Azure SQL)]
+        GW -->|Route| Product[Product-Svc :8003]
+        GW -->|Route| Vault[Vault-Svc :8009]
+        GW -->|Other| Services[Cart, Order, Payment, etc.]
+        
+        Vault --> PVC[Vault-Storage / PVC]
+    end
+    
+    subgraph Observability
+        FE -.-> AppInsights[Azure App Insights]
+        GW -.-> AppInsights
+        Services -.-> Prometheus[Prometheus/Grafana]
+    end
 ```
 
 ---
 
-## 🚀 Quick Start (Deployment)
+## 🚀 Deployment Guide
 
-### Prerequisites
-- Docker & Docker Buildx
-- Kubernetes Cluster (AKS recommended)
-- `kubectl` configured
+### 1. Requirements
+- Azure Kubernetes Service (AKS) or Local K3s/Minikube.
+- Azure SQL Instance or MSSQL Container.
+- Azure Storage Account (for PVC).
 
-### 1. Build & Push Images
+### 2. Implementation
 ```bash
-# Example for Auth Service
-cd services/auth-service
-docker buildx build --platform linux/amd64 -t your-registry.azurecr.io/auth:v1 --push .
-```
+# 1. Build and push microservices
+docker build -t your-registry.azurecr.io/api-gateway:v1 ./services/api-gateway
+docker push your-registry.azurecr.io/api-gateway:v1
 
-### 2. Deploy to Kubernetes
-```bash
+# 2. Apply K8s Configurations
 kubectl apply -f k8s/deployments-fixed.yaml
+kubectl apply -f k8s/ingress.yaml
 ```
 
 ---
 
-## ⚙️ Development Highlights
+## 📈 Monitoring & Maintenance
 
-### Super-Fast Builds
-We use a standardized multi-stage build process that caches system dependencies (like SQL drivers). 
-> **Build Time Improvement**: 15m ➡️ **8s**
-
-### Auto-Migration Engine
-Services are equipped with a custom auto-migration block in `main.py`:
-```python
-# Auto-migration for missing columns
-try:
-    with engine.begin() as conn:
-        # Automatically syncs schema on startup
-        conn.execute(text("ALTER TABLE ... ADD ..."))
-except Exception as e:
-    print(f"Migration failed: {e}")
-```
+- **Health Checks**: Access `/health` on any service to verify its internal state.
+- **Metrics**: Prometheus scrapes all services on port `800x/metrics`.
+- **Logs**: Use `kubectl logs -f deployment/stream-api-deploy` for real-time Gateway audit viewing.
 
 ---
 
-## 📁 Directory Structure
-
-- `frontend/`: React application.
-- `services/`: All 9 microservices.
-- `k8s/`: Kubernetes deployment manifests.
-- `scripts/`: Utility scripts for seeding and setup.
-
----
-
-## 🤝 Contributing
-Feel free to fork and submit PRs for any improvements in UI or new microservice modules!
-
----
-**Developed by [Puneet Kumar](https://github.com/Puneet-K-Sharma)**
+## 🤝 Developed by
+**[Puneet Kumar](https://github.com/Puneet-K-Sharma)**  
+*Crafting scalable, cloud-native distributed systems.*

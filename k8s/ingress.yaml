@@ -10,7 +10,7 @@ spec:
   # ==============================================================
   # RULE 1: Frontend Service Ke Liye (Aapki Website yahan khulegi)
   # ==============================================================
-  - host: shop.local            # <-- DEKHO: Yeh raha aapka Host (Agar aapka real domain 'mywebsite.com' hai to wo likhna)
+  - host: jpshop.puneetdevops.online            # <-- DEKHO: Yeh raha aapka Host (Agar aapka real domain 'mywebsite.com' hai to wo likhna)
     http:
       paths:
       - path: /                 # <-- DEKHO: Yeh raha Path ( / ka matlab website pe udte hi kya khulega)
@@ -24,7 +24,7 @@ spec:
   # ==============================================================
   # RULE 2: API Gateway Ke Liye (Backend ka Traffic idhar aayega)
   # ==============================================================
-  - host: api.shop.local        # <-- DEKHO: API Gateway ke liye Host (Subdomain) alag se diya gaya hai
+  - host: api.puneetdevops.online        # <-- DEKHO: API Gateway ke liye Host (Subdomain) alag se diya gaya hai
     http:
       paths:
       - path: /                 # <-- Path is host ke liye
