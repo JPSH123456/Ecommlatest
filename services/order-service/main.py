@@ -15,18 +15,8 @@ from typing import List
 # ---------------------------
 # Database setup
 # ---------------------------
-DATABASE_URL = "sqlite:///./orderservice.db"  # self-contained local DB
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+import models, auth, security
+from database import engine, SessionLocal, Base, get_db
 
 # ---------------------------
 # Models
@@ -147,7 +137,7 @@ def update_order_status(order_id: int, status_in: str, db: Session = Depends(get
     return {"detail": "Order status updated", "new_status": order.status}
 
 @app.get("/admin/orders", response_model=List[OrderResponse])
-def get_all_orders(db: Session = Depends(get_db)):
+def get_all_orders(db: Session = Depends(get_db), admin: dict = Depends(security.verify_admin)):
     orders = db.query(Order).all()
     return orders
 

@@ -11,9 +11,8 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
-import models, schemas
+import models, schemas, security
 from database import engine, get_db
-from security import verify_token
 import random
 
 from sqlalchemy import text
@@ -60,28 +59,40 @@ async def root():
 
 @app.get("/products", response_model=List[schemas.ProductResponse])
 def get_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    # Always return User's Stable Catalog for the Puneet/Adult profile 'WOW' experience
-    # Randomly shuffle the LIST of objects, but the mapping inside them is FIXED
-    pool = list(MASTER_CATALOG)
-    random.shuffle(pool)
-    return pool[skip : skip + limit]
+    # Fetch from database
+    db_products = db.query(models.Product).all()
+    
+    # Merge with MASTER_CATALOG to ensure "WOW" items are always available
+    # while also showing new items added via the Admin Dashboard.
+    seen_ids = {p.id for p in db_products}
+    final_list = list(db_products)
+    for p in MASTER_CATALOG:
+        if p["id"] not in seen_ids:
+            final_list.append(p)
+    
+    # Randomly shuffle for the dynamic experience
+    random.shuffle(final_list)
+    return final_list[skip : skip + limit]
 
 @app.get("/products/{product_id}", response_model=schemas.ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
-    # Match against MASTER_CATALOG first for identity sync
-    product = next((p for p in MASTER_CATALOG if p["id"] == product_id), None)
+    # Match against database first
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
     
     if not product:
-        # Fallback to database
-        product = db.query(models.Product).filter(models.Product.id == product_id).first()
+        # Fallback to MASTER_CATALOG for static items
+        product = next((p for p in MASTER_CATALOG if p["id"] == product_id), None)
+        
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
         
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @app.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
-def create_product(product_in: schemas.ProductCreate, request: Request, db: Session = Depends(get_db)):
-    verify_token(request)
+def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db), admin: dict = Depends(security.verify_admin)):
     product = models.Product(**product_in.model_dump())
     db.add(product)
     db.commit()

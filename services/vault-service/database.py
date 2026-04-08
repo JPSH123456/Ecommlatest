@@ -13,22 +13,11 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./local.db"
 
-# If using Azure SQL, convert ODBC string to proper SQLAlchemy URL
-if DATABASE_URL.startswith("Driver={") or DATABASE_URL.startswith("mssql://") is False:
-    # Replace these with your actual Azure SQL credentials
-    server = os.getenv("DB_SERVER", "ecommserveraks.database.windows.net")
-    database = os.getenv("DB_NAME", "ecommdb")
-    username = os.getenv("DB_USER", "ecommadmin")
-    password = os.getenv("DB_PASSWORD", "admin@123@")  # special chars need encoding
-
-    # URL encode username/password
-    password_encoded = urllib.parse.quote_plus(password)
-
-    # Build SQLAlchemy connection string for ODBC
-    DATABASE_URL = (
-        f"mssql+pyodbc://{username}:{password_encoded}@{server}:1433/{database}"
-        f"?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no&Connection+Timeout=30"
-    )
+# If using Azure SQL (raw ODBC string), convert to SQLAlchemy format
+if DATABASE_URL and not DATABASE_URL.startswith("mssql") and not DATABASE_URL.startswith("sqlite"):
+    import urllib.parse
+    params = urllib.parse.quote_plus(DATABASE_URL)
+    DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={params}"
 
 # -----------------------------
 # CREATE ENGINE

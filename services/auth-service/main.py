@@ -85,10 +85,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/admin/users", response_model=List[schemas.UserResponse])
-def get_all_users(db: Session = Depends(get_db)):
-    users = db.query(models.User).all()
-    return users
-
+def get_all_users(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+    return db.query(models.User).all()
 
 # Expose metrics for Prometheus
 Instrumentator().instrument(app).expose(app)
