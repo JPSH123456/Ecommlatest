@@ -11,7 +11,12 @@ export default function Cart() {
   }, []);
 
   useEffect(() => {
-    setTotal(cart.reduce((acc, item) => acc + (100 * item.quantity), 0)); 
+    const newTotal = cart.reduce((acc, item) => {
+      // Use actual product price if available, otherwise fallback
+      const price = item.price || item.product?.price || 0;
+      return acc + (price * item.quantity);
+    }, 0);
+    setTotal(newTotal);
   }, [cart]);
 
   const handleRemove = async (id) => {
@@ -23,7 +28,11 @@ export default function Cart() {
       try {
           const res = await api.post('/order/orders', {
               total_amount: total,
-              items: cart.map(c => ({ product_id: c.product_id, quantity: c.quantity, price: 100 }))
+              items: cart.map(c => ({ 
+                product_id: c.product_id, 
+                quantity: c.quantity, 
+                price: c.price || c.product?.price || 0
+              }))
           });
           const order_id = res.data.id;
           await api.post('/payment/payments', { order_id, amount: total });
@@ -54,7 +63,7 @@ export default function Cart() {
                      </div>
                  </div>
                  <div className="flex flex-col items-end">
-                     <p className="font-extrabold text-2xl text-red-500 mb-2">$100.00</p>
+                     <p className="font-extrabold text-2xl text-red-500 mb-2">${((item.price || item.product?.price || 0) * item.quantity).toFixed(2)}</p>
                      <button onClick={() => handleRemove(item.id)} className="text-sm font-semibold text-gray-400 hover:text-red-500 transition border border-transparent hover:border-red-500 px-3 py-1 rounded">Remove</button>
                  </div>
              </div>

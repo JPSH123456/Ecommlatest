@@ -6,8 +6,11 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 DB_SERVER = os.getenv("DB_SERVER", "localhost")
 DB_PORT = os.getenv("DB_PORT", "1433")
 DB_USER = os.getenv("DB_USER", "SA")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "SuperSecretPassword123!")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME", "master")
+
+if not DB_PASSWORD:
+    raise ValueError("DB_PASSWORD environment variable is required")
 
 # Use DATABASE_URL directly if provided (e.g. for Azure MSSQL)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")

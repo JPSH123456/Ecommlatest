@@ -77,9 +77,13 @@ Base.metadata.create_all(bind=engine)
 # ---------------------------
 app = FastAPI(title="Order Service")
 
-# Simple simulation: assume all requests come from user_id=1
-def get_user_id():
-    return 1
+# Extract user_id from JWT token
+def get_user_id(request: Request) -> int:
+    try:
+        user_payload = security.verify_token(request)
+        return user_payload.get("id")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # Health check
 @app.get("/health")
@@ -94,22 +98,22 @@ async def root():
 # CRUD endpoints
 # ---------------------------
 @app.get("/orders", response_model=List[OrderResponse])
-def get_orders(db: Session = Depends(get_db)):
-    user_id = get_user_id()
+def get_orders(request: Request, db: Session = Depends(get_db)):
+    user_id = get_user_id(request)
     orders = db.query(Order).filter(Order.user_id == user_id).all()
     return orders
 
 @app.get("/orders/{order_id}", response_model=OrderResponse)
-def get_order(order_id: int, db: Session = Depends(get_db)):
-    user_id = get_user_id()
+def get_order(order_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_user_id(request)
     order = db.query(Order).filter(Order.id == order_id, Order.user_id == user_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
 @app.post("/orders", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-def create_order(order_in: OrderCreate, db: Session = Depends(get_db)):
-    user_id = get_user_id()
+def create_order(order_in: OrderCreate, request: Request, db: Session = Depends(get_db)):
+    user_id = get_user_id(request)
     new_order = Order(user_id=user_id, total_amount=order_in.total_amount)
     db.add(new_order)
     db.commit()

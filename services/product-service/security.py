@@ -2,7 +2,10 @@ from fastapi import Request, HTTPException, status, Depends
 import os
 from jose import JWTError, jwt
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "my_super_secret_jwt_key_12345")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY environment variable is required")
+
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 def verify_token(request: Request):

@@ -86,10 +86,6 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
-        
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return product
 
 @app.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db), admin: dict = Depends(security.verify_admin)):
