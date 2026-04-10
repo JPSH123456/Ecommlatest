@@ -3,17 +3,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Default MS SQL server connection info. We use pyodbc with TrustServerCertificate=yes
-DB_SERVER = os.getenv("DB_SERVER", "localhost")
-DB_PORT = os.getenv("DB_PORT", "1433")
-DB_USER = os.getenv("DB_USER", "SA")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME", "master")
-
-if not DB_PASSWORD:
-    raise ValueError("DB_PASSWORD environment variable is required")
-
 # Use DATABASE_URL directly if provided (e.g. for Azure MSSQL)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not SQLALCHEMY_DATABASE_URL:
+    # Fall back to individual connection parameters
+    DB_SERVER = os.getenv("DB_SERVER", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "1433")
+    DB_USER = os.getenv("DB_USER", "SA")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_NAME = os.getenv("DB_NAME", "master")
+    
+    if not DB_PASSWORD:
+        raise ValueError("DB_PASSWORD environment variable is required (or provide DATABASE_URL)")
 if SQLALCHEMY_DATABASE_URL and not SQLALCHEMY_DATABASE_URL.startswith("mssql"):
     import urllib.parse
     params = urllib.parse.quote_plus(SQLALCHEMY_DATABASE_URL)

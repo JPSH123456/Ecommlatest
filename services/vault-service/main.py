@@ -9,6 +9,7 @@ if connection_string:
 import shutil
 from typing import List
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -27,6 +28,21 @@ if not os.path.exists(STORAGE_PATH):
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Vault Service")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://jpshop.puneetdevops.online",
+        "http://jpshop.puneetdevops.online",
+        "https://api.puneetdevops.online",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 def health_check():

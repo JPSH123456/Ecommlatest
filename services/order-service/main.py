@@ -15,29 +15,8 @@ from typing import List
 # ---------------------------
 # Database setup
 # ---------------------------
-import models, auth, security
+import models, security
 from database import engine, SessionLocal, Base, get_db
-
-# ---------------------------
-# Models
-# ---------------------------
-class Order(Base):
-    __tablename__ = "orders"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
-    total_amount = Column(Float)
-    status = Column(String, default="pending")
-    items = relationship("OrderItem", back_populates="order")
-
-
-class OrderItem(Base):
-    __tablename__ = "order_items"
-    id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"))
-    product_id = Column(Integer)
-    quantity = Column(Integer)
-    price = Column(Float)
-    order = relationship("Order", back_populates="items")
 
 # ---------------------------
 # Schemas
@@ -100,13 +79,13 @@ async def root():
 @app.get("/orders", response_model=List[OrderResponse])
 def get_orders(request: Request, db: Session = Depends(get_db)):
     user_id = get_user_id(request)
-    orders = db.query(Order).filter(Order.user_id == user_id).all()
+    orders = db.query(models.Order).filter(models.Order.user_id == user_id).all()
     return orders
 
 @app.get("/orders/{order_id}", response_model=OrderResponse)
 def get_order(order_id: int, request: Request, db: Session = Depends(get_db)):
     user_id = get_user_id(request)
-    order = db.query(Order).filter(Order.id == order_id, Order.user_id == user_id).first()
+    order = db.query(models.Order).filter(models.Order.id == order_id, models.Order.user_id == user_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
@@ -114,13 +93,13 @@ def get_order(order_id: int, request: Request, db: Session = Depends(get_db)):
 @app.post("/orders", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(order_in: OrderCreate, request: Request, db: Session = Depends(get_db)):
     user_id = get_user_id(request)
-    new_order = Order(user_id=user_id, total_amount=order_in.total_amount)
+    new_order = models.Order(user_id=user_id, total_amount=order_in.total_amount)
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
 
     for item in order_in.items:
-        new_item = OrderItem(
+        new_item = models.OrderItem(
             order_id=new_order.id,
             product_id=item.product_id,
             quantity=item.quantity,
@@ -133,7 +112,7 @@ def create_order(order_in: OrderCreate, request: Request, db: Session = Depends(
 
 @app.put("/orders/{order_id}/status")
 def update_order_status(order_id: int, status_in: str, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     order.status = status_in
@@ -142,7 +121,7 @@ def update_order_status(order_id: int, status_in: str, db: Session = Depends(get
 
 @app.get("/admin/orders", response_model=List[OrderResponse])
 def get_all_orders(db: Session = Depends(get_db), admin: dict = Depends(security.verify_admin)):
-    orders = db.query(Order).all()
+    orders = db.query(models.Order).all()
     return orders
 
 # ---------------------------

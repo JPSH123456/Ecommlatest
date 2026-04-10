@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, status, Depends
 import os
 from jose import JWTError, jwt
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "default-jwt-secret-key")
 if not SECRET_KEY:
     raise ValueError("JWT_SECRET_KEY environment variable is required")
 

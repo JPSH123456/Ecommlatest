@@ -9,6 +9,7 @@ if connection_string:
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models, schemas
 from database import engine, get_db
@@ -35,6 +36,21 @@ except Exception as e:
     print(f"Migration failed for user-service: {e}")
 
 app = FastAPI(title="User Service")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://jpshop.puneetdevops.online",
+        "http://jpshop.puneetdevops.online",
+        "https://api.puneetdevops.online",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 def health_check():

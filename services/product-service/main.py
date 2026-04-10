@@ -9,6 +9,7 @@ if connection_string:
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import models, schemas, security
@@ -36,6 +37,21 @@ except Exception as e:
     print(f"Migration failed for product-service: {e}")
 
 app = FastAPI(title="Product Service")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://jpshop.puneetdevops.online",
+        "http://jpshop.puneetdevops.online",
+        "https://api.puneetdevops.online",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # PUNEET'S STABLE MASTER CATALOG - ABSOLUTELY FIXED TO PREVENT 'GADBAD'
 MASTER_CATALOG = [
