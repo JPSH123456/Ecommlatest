@@ -1,41 +1,42 @@
 import os
-import urllib
+import urllib.parse
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# -----------------------------
-# DATABASE URL CONFIGURATION
-# -----------------------------
-DATABASE_URL = os.getenv("DATABASE_URL")
+def parse_password_from_url(url: str):
+    """Robustly extracts password from ODBC strings or URIs"""
+    if not url: return os.getenv("DB_PASSWORD", "")
+    if "Pwd=" in url:
+        for part in url.split(";"):
+            if part.strip().startswith("Pwd="): return part.split("=", 1)[1]
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.password: return urllib.parse.unquote(parsed.password)
+    except: pass
+    return ""
 
-# Fallback local SQLite (for local development)
-if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///./local.db"
+def get_db_url():
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        # Build URIs safely with encoded credentials
+        user = os.getenv("DB_USER", "SA")
+        pwd = urllib.parse.quote_plus(os.getenv("DB_PASSWORD", ""))
+        server = os.getenv("DB_SERVER", "localhost")
+        port = os.getenv("DB_PORT", "1433")
+        db_name = os.getenv("DB_NAME", "master")
+        return f"mssql+pyodbc://{user}:{pwd}@{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+    
+    if "Driver=" in url or ";" in url:
+        # Wrap ODBC strings for SQLAlchemy
+        params = urllib.parse.quote_plus(url)
+        return f"mssql+pyodbc:///?odbc_connect={params}"
+    return url
 
-# If using Azure SQL (raw ODBC string), convert to SQLAlchemy format
-if DATABASE_URL and not DATABASE_URL.startswith("mssql") and not DATABASE_URL.startswith("sqlite"):
-    import urllib.parse
-    params = urllib.parse.quote_plus(DATABASE_URL)
-    DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={params}"
-
-# -----------------------------
-# CREATE ENGINE
-# -----------------------------
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-
-# -----------------------------
-# SESSION & BASE
-# -----------------------------
+SQLALCHEMY_DATABASE_URL = get_db_url()
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# -----------------------------
-# FASTAPI DEPENDENCY
-# -----------------------------
 def get_db():
     db = SessionLocal()
     try:

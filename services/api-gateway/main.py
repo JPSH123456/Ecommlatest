@@ -7,7 +7,7 @@ connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 if connection_string:
     configure_azure_monitor(connection_string=connection_string)
 
-from fastapi import FastAPI, Request, Response, BackgroundTasks, Depends
+from fastapi import FastAPI, Request, Response, BackgroundTasks, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import jwt  # For decoding user info
@@ -185,10 +185,32 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 status_code=proxy_response.status_code
             )
             
+            # Get the origin from request headers for dynamic CORS handling
+            origin = request.headers.get("origin")
+            
+            # Construct headers for the proxied response
+            resp_headers = {k: v for k, v in proxy_response.headers.items() if k.lower() not in excluded_headers}
+            
+            # Manually inject CORS headers for proxied responses
+            # This is necessary because CORSMiddleware doesn't apply to returned Response objects
+            allowed_origins = [
+                "https://jpshop.puneetdevops.online",
+                "http://jpshop.puneetdevops.online",
+                "https://api.puneetdevops.online",
+                "http://localhost:5173",
+                "http://localhost:3000"
+            ]
+            
+            if origin in allowed_origins:
+                resp_headers["Access-Control-Allow-Origin"] = origin
+                resp_headers["Access-Control-Allow-Credentials"] = "true"
+                resp_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                resp_headers["Access-Control-Allow-Headers"] = "*"
+
             return Response(
                 content=proxy_response.content,
                 status_code=proxy_response.status_code,
-                headers={k: v for k, v in proxy_response.headers.items() if k.lower() not in excluded_headers}
+                headers=resp_headers
             )
         except httpx.RequestError as e:
             # Log the failure

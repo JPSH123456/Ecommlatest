@@ -1,34 +1,40 @@
 import os
+import urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Default MS SQL server connection info. We use pyodbc with TrustServerCertificate=yes
-# Use DATABASE_URL directly if provided (e.g. for Azure MSSQL)
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+def parse_password_from_url(url: str):
+    """Robustly extracts password from ODBC strings or URIs"""
+    if not url: return os.getenv("DB_PASSWORD", "")
+    if "Pwd=" in url:
+        for part in url.split(";"):
+            if part.strip().startswith("Pwd="): return part.split("=", 1)[1]
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.password: return urllib.parse.unquote(parsed.password)
+    except: pass
+    return ""
 
-if not SQLALCHEMY_DATABASE_URL:
-    # Fall back to individual connection parameters
-    DB_SERVER = os.getenv("DB_SERVER", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "1433")
-    DB_USER = os.getenv("DB_USER", "SA")
-    DB_PASSWORD = os.getenv("DB_PASSWORD")
-    DB_NAME = os.getenv("DB_NAME", "master")
+def get_db_url():
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        # Build URIs safely with encoded credentials
+        user = os.getenv("DB_USER", "SA")
+        pwd = urllib.parse.quote_plus(os.getenv("DB_PASSWORD", ""))
+        server = os.getenv("DB_SERVER", "localhost")
+        port = os.getenv("DB_PORT", "1433")
+        db_name = os.getenv("DB_NAME", "master")
+        return f"mssql+pyodbc://{user}:{pwd}@{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
     
-    if not DB_PASSWORD:
-        raise ValueError("DB_PASSWORD environment variable is required (or provide DATABASE_URL)")
-if SQLALCHEMY_DATABASE_URL and not SQLALCHEMY_DATABASE_URL.startswith("mssql"):
-    import urllib.parse
-    params = urllib.parse.quote_plus(SQLALCHEMY_DATABASE_URL)
-    SQLALCHEMY_DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={params}"
-elif not SQLALCHEMY_DATABASE_URL:
-    SQLALCHEMY_DATABASE_URL = (
-        f"mssql+pyodbc://{DB_USER}:{DB_PASSWORD}@{DB_SERVER}:{DB_PORT}/{DB_NAME}"
-        "?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
-    )
+    if "Driver=" in url or ";" in url:
+        # Wrap ODBC strings for SQLAlchemy
+        params = urllib.parse.quote_plus(url)
+        return f"mssql+pyodbc:///?odbc_connect={params}"
+    return url
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = get_db_url()
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
 def get_db():

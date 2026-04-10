@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Connect to the API Gateway - Use environment variable
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_HOST || 'http://localhost:8000' || 'https://api.puneetdevops.online',
+  baseURL: (window._env_ && window._env_.VITE_API_HOST) || import.meta.env.VITE_API_HOST || 'https://api.puneetdevops.online',
 });
 
 api.interceptors.request.use((config) => {
