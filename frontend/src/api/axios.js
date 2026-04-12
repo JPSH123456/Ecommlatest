@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Connect to the API Gateway - Primary Production URL
-// We use a hardcoded fallback to ensure it NEVER defaults to localhost in a production build
+// Connect to the API Gateway - ABSOLUTE PRODUCTION HTTPS URL
+// Unique Tag for Cache Verification: [v100-PROD-STABLE]
 const PROD_API_URL = 'https://api.puneetdevops.online';
-const apiHost = import.meta.env.VITE_API_HOST || PROD_API_URL;
+const apiHost = PROD_API_URL; 
 
-console.log("🌐 API Host Connection:", apiHost);
+console.log("🚀 PROD FIX [v100] applied! Connecting to:", apiHost);
 
 const api = axios.create({
   baseURL: apiHost,
