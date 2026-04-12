@@ -98,7 +98,7 @@ export default function Login() {
           </button>
 
           {/* Demo Login Button for Localhost Demo - Only shown in DEV mode */}
-          {import.meta.env.VITE_APP_MODE === 'dev' && (
+          {(window._env_?.VITE_APP_MODE === 'dev' || import.meta.env.VITE_APP_MODE === 'dev') && (
             <button 
               type="button"
               onClick={() => {

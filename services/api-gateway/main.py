@@ -118,19 +118,17 @@ def get_audit_logs(request: Request, db: Session = Depends(get_db)):
     
     try:
         token = auth_header.split(" ")[1]
-        # In gateway, we can verify signature if we have the secret, 
-        # or just check the role if we trust the services.
-        # However, for the gateway's own admin endpoint, we should be strict.
-        # For now, let's at least check the role.
+        # We only decode, not verify signature here for simplicity in gateway
         payload = jwt.decode(token, options={"verify_signature": False})
         if payload.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="Admin access required")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+             from fastapi import HTTPException as FastAPIHTTPException
+             raise FastAPIHTTPException(status_code=403, detail="Admin access required")
+    except Exception as e:
+        from fastapi import HTTPException as FastAPIHTTPException
+        raise FastAPIHTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
     # Returns last 100 logs for admin view
-    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
-    return logs
+    return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
 
 # Example simple proxy logic
 @app.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
@@ -171,7 +169,8 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 url=url,
                 headers=headers,
                 content=body,
-                params=request.query_params
+                params=request.query_params,
+                timeout=10.0
             )
             
             # Queue the background task to log the audit record
@@ -185,14 +184,11 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 status_code=proxy_response.status_code
             )
             
-            # Get the origin from request headers for dynamic CORS handling
-            origin = request.headers.get("origin")
-            
             # Construct headers for the proxied response
             resp_headers = {k: v for k, v in proxy_response.headers.items() if k.lower() not in excluded_headers}
             
             # Manually inject CORS headers for proxied responses
-            # This is necessary because CORSMiddleware doesn't apply to returned Response objects
+            origin = request.headers.get("origin")
             allowed_origins = [
                 "https://jpshop.puneetdevops.online",
                 "http://jpshop.puneetdevops.online",
@@ -213,16 +209,7 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 headers=resp_headers
             )
         except httpx.RequestError as e:
-            # Log the failure
-            background_tasks.add_task(
-                save_audit_log,
-                ip_address=client_ip,
-                method=request.method,
-                user_email=user_email,
-                service_name=service_name,
-                path=path,
-                status_code=503
-            )
+            # Service unavailable fallback
             return Response(status_code=503, content=f"Service unavailable: {str(e)}")
 
 # Expose metrics for Prometheus

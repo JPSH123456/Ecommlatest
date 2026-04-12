@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Connect to the API Gateway - Use environment variable
+// Connect to the API Gateway - Using build-time configuration
+const apiHost = import.meta.env.VITE_API_HOST || 'https://api.puneetdevops.online';
+
+console.log("🚀 API Host Initialized:", apiHost);
+
 const api = axios.create({
-  baseURL: (window._env_ && window._env_.VITE_API_HOST) || import.meta.env.VITE_API_HOST || 'https://api.puneetdevops.online',
+  baseURL: apiHost,
 });
 
 api.interceptors.request.use((config) => {

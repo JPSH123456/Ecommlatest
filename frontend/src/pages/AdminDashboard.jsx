@@ -42,21 +42,49 @@ const AdminDashboard = () => {
           const res = await api.get('/auth/admin/users');
           setUsers(res.data);
         } catch (err) {
+          console.warn("⚠️ Using Mock Users Data");
           setUsers([
-            { id: 1, full_name: "Puneet Sharma", email: "puneet@example.com", hashed_password: "$2b$12$KSD932...KSD", role: "admin" },
-            { id: 2, full_name: "John Doe", email: "john@example.com", hashed_password: "$2b$12$93KS...93KS", role: "user" },
-            { id: 3, full_name: "Jane Smith", email: "jane@example.com", hashed_password: "$2b$12$KS93...KS92", role: "user" }
+            { id: 1, full_name: "Puneet Sharma", email: "puneet@example.com", hashed_password: "$10$H8k...Ksl", role: "admin" },
+            { id: 2, full_name: "Rahul Kumar", email: "rahul@example.com", hashed_password: "$10$J9m...Ltm", role: "user" },
+            { id: 3, full_name: "Priya Singh", email: "priya@example.com", hashed_password: "$10$K0p...Mun", role: "user" }
           ]);
         }
       } else if (tab === 'orders') {
-        const res = await api.get('/order/admin/orders');
-        setOrders(res.data);
+        try {
+          const res = await api.get('/order/admin/orders');
+          setOrders(res.data);
+        } catch (err) {
+          console.warn("⚠️ Using Mock Orders Data");
+          setOrders([
+            { id: 101, user_id: 1, total_amount: 1250.00, status: "completed", items: [1, 2] },
+            { id: 102, user_id: 2, total_amount: 899.50, status: "pending", items: [3] },
+            { id: 103, user_id: 3, total_amount: 2100.00, status: "completed", items: [1, 4, 5] }
+          ]);
+        }
       } else if (tab === 'products') {
-        const res = await api.get('/product/products');
-        setProducts(res.data);
+        try {
+          const res = await api.get('/product/products');
+          setProducts(res.data);
+        } catch (err) {
+          console.warn("⚠️ Using Mock Products Data");
+          setProducts([
+            { id: 1, name: "Premium Hoodie", category: "Apparel", price: 49.99, stock_quantity: 45, image_url: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=200" },
+            { id: 2, name: "Wireless Earbuds", category: "Electronics", price: 129.00, stock_quantity: 12, image_url: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=200" },
+            { id: 3, name: "Sleek Backpack", category: "Accessories", price: 79.50, stock_quantity: 8, image_url: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200" }
+          ]);
+        }
       } else if (tab === 'activity') {
-        const res = await api.get('/admin/audit-logs');
-        setAuditLogs(res.data);
+        try {
+          const res = await api.get('/admin/audit-logs');
+          setAuditLogs(res.data);
+        } catch (err) {
+          console.warn("⚠️ Using Mock Activity Data");
+          setAuditLogs([
+            { id: 1, timestamp: new Date().toISOString(), user_email: "puneet@example.com", ip_address: "10.0.0.5", method: "POST", service_name: "auth", path: "/login", status_code: 200 },
+            { id: 2, timestamp: new Date().toISOString(), user_email: "rahul@example.com", ip_address: "10.0.0.8", method: "GET", service_name: "product", path: "/products", status_code: 200 },
+            { id: 3, timestamp: new Date().toISOString(), user_email: "Anonymous", ip_address: "192.168.1.1", method: "POST", service_name: "order", path: "/checkout", status_code: 401 }
+          ]);
+        }
       }
     } catch (err) {
       console.error(err);

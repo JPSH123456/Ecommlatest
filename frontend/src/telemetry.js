@@ -12,11 +12,11 @@ const appInsights = new ApplicationInsights({
   }
 });
 
-if (connectionString) {
+if (connectionString && connectionString !== "undefined") {
   appInsights.loadAppInsights();
-  console.log("Application Insights initialized");
+  console.log("🚀 Application Insights initialized");
 } else {
-  console.warn("Application Insights Connection String not found. Telemetry disabled.");
+  console.warn("⚠️ Application Insights Connection String not found. Telemetry disabled.");
 }
 
 export { appInsights };

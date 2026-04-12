@@ -81,7 +81,7 @@ spec:
     spec:
       containers:
       - name: stream-api-cnt
-        image: aksacr.azurecr.io/api:v4
+        image: aksacr.azurecr.io/api-gateway:v1
         imagePullPolicy: Always
         resources:
           requests:
@@ -140,7 +140,7 @@ spec:
     spec:
       containers:
       - name: auth-service-cnt
-        image: aksacr.azurecr.io/auth:v10
+        image: aksacr.azurecr.io/auth-service:v1
         imagePullPolicy: Always
         resources:
           requests:
