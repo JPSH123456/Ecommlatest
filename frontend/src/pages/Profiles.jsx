@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import useStore from '../store/useStore';
 
 export default function Profiles() {
-  const { profiles, setActiveProfile, addProfile } = useStore();
+  const { profiles, setActiveProfile, addProfile, fetchProfiles } = useStore();
+
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
 
   const handleSelect = (profile) => {
     setActiveProfile(profile);

@@ -4,16 +4,30 @@ import api from '../api/axios';
 const useStore = create((set) => ({
   user: null,
   activeProfile: null,
-  profiles: [
-    { name: 'Puneet Sharma', img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Puneet&backgroundColor=b6e3f4', isKids: false },
-    { name: 'Children', img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kids&backgroundColor=c0aede', isKids: true }
-  ],
+  profiles: [],
   cart: [],
   cartCount: 0,
   
   setUser: (user) => set({ user }),
   setActiveProfile: (profile) => set({ activeProfile: profile }),
-  addProfile: (newProfile) => set((state) => ({ profiles: [...state.profiles, newProfile] })),
+  
+  fetchProfiles: async () => {
+    try {
+      const res = await api.get('/user/streaming-profiles');
+      set({ profiles: res.data });
+    } catch (err) {
+      console.error("Failed to fetch profiles", err);
+    }
+  },
+  
+  addProfile: async (newProfile) => {
+    try {
+      const res = await api.post('/user/streaming-profiles', newProfile);
+      set((state) => ({ profiles: [...state.profiles, res.data] }));
+    } catch (err) {
+      console.error("Failed to add profile", err);
+    }
+  },
   logout: () => {
     localStorage.removeItem('token');
     set({ user: null, activeProfile: null, cart: [], cartCount: 0 });

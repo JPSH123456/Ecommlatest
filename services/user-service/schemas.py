@@ -16,3 +16,18 @@ class UserProfileResponse(UserProfileBase):
 
     class Config:
         from_attributes = True
+
+class StreamingProfileBase(BaseModel):
+    name: str
+    img: Optional[str] = None
+    isKids: bool = False
+
+class StreamingProfileCreate(StreamingProfileBase):
+    pass
+
+class StreamingProfileResponse(StreamingProfileBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True

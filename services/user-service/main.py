@@ -8,6 +8,7 @@ if connection_string:
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from typing import List
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -86,6 +87,23 @@ def update_profile(profile_in: schemas.UserProfileCreate, request: Request, db: 
     db.commit()
     db.refresh(profile)
     return profile
+
+@app.get("/streaming-profiles", response_model=List[schemas.StreamingProfileResponse])
+def get_streaming_profiles(request: Request, db: Session = Depends(get_db)):
+    user_payload = verify_token(request)
+    user_id = user_payload.get("id")
+    profiles = db.query(models.StreamingProfile).filter(models.StreamingProfile.user_id == user_id).all()
+    return profiles
+
+@app.post("/streaming-profiles", response_model=schemas.StreamingProfileResponse)
+def create_streaming_profile(profile_in: schemas.StreamingProfileCreate, request: Request, db: Session = Depends(get_db)):
+    user_payload = verify_token(request)
+    user_id = user_payload.get("id")
+    new_profile = models.StreamingProfile(user_id=user_id, **profile_in.model_dump())
+    db.add(new_profile)
+    db.commit()
+    db.refresh(new_profile)
+    return new_profile
 
 # Expose metrics for Prometheus
 Instrumentator().instrument(app).expose(app)
