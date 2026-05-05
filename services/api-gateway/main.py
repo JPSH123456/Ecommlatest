@@ -2,7 +2,6 @@ import os
 from azure.monitor.opentelemetry import configure_azure_monitor
 
 # Configure Azure Monitor for Application Insights
-# This must be called before any other imports that might use opentelemetry
 connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 if connection_string:
     configure_azure_monitor(connection_string=connection_string)
@@ -10,17 +9,17 @@ if connection_string:
 from fastapi import FastAPI, Request, Response, BackgroundTasks, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-import jwt  # For decoding user info
+import jwt
 from sqlalchemy.orm import Session
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from database import engine, Base, SessionLocal, get_db
 from models import AuditLog
 
-# Create DB tables if they don't exist
+# Create DB tables
 Base.metadata.create_all(bind=engine)
 
-# Getting service URLs and hosts from env
+# Service URLs
 API_HOST = os.getenv("API_HOST", "api.puneetdevops.online")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8002")
@@ -31,40 +30,6 @@ PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8
 REVIEW_SERVICE_URL = os.getenv("REVIEW_SERVICE_URL", "http://review-service:8007")
 WISHLIST_SERVICE_URL = os.getenv("WISHLIST_SERVICE_URL", "http://wishlist-service:8008")
 VAULT_SERVICE_URL = os.getenv("VAULT_SERVICE_URL", "http://vault-service:8009")
-
-app = FastAPI(title="API Gateway")
-
-# Force HTTPS for all redirects and proxies when behind a proxy
-@app.middleware("http")
-async def force_https_middleware(request: Request, call_next):
-    # Trusting X-Forwarded-Proto for HTTPS
-    if request.headers.get("x-forwarded-proto") == "https" or request.headers.get("x-forwarded-scheme") == "https":
-        request.scope["scheme"] = "https"
-    
-    response = await call_next(request)
-    
-    # Ensure redirects produced by FastAPI also use HTTPS
-    if response.status_code in (301, 302, 307, 308) and "location" in response.headers:
-        loc = response.headers["location"]
-        if loc.startswith(f"http://{API_HOST}"):
-            response.headers["location"] = loc.replace("http://", "https://", 1)
-            
-    return response
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://jpshop.puneetdevops.online",
-        "http://jpshop.puneetdevops.online",
-        "https://api.puneetdevops.online",
-        "http://localhost:5173",  # Local Vite dev server
-        "http://localhost:3000"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 SERVICES = {
     "auth": AUTH_SERVICE_URL,
@@ -78,8 +43,17 @@ SERVICES = {
     "vault": VAULT_SERVICE_URL,
 }
 
+app = FastAPI(title="API Gateway")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Simplified for troubleshooting
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 def save_audit_log(ip_address: str, method: str, service_name: str, path: str, status_code: int, user_email: str = None):
-    """Background task to safely save request logs without blocking the proxy"""
     db = SessionLocal()
     try:
         log_entry = AuditLog(
@@ -101,65 +75,45 @@ def save_audit_log(ip_address: str, method: str, service_name: str, path: str, s
 def health_check():
     return {"status": "gateway is live"}
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Welcome to StreamShop API Gateway",
-        "status": "online",
-        "services": list(SERVICES.keys())
-    }
-
 @app.get("/admin/audit-logs")
 def get_audit_logs(request: Request, db: Session = Depends(get_db)):
-    # Verify admin role
     auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Missing token")
     
     try:
         token = auth_header.split(" ")[1]
-        # We only decode, not verify signature here for simplicity in gateway
         payload = jwt.decode(token, options={"verify_signature": False})
         if payload.get("role") != "admin":
-             from fastapi import HTTPException as FastAPIHTTPException
-             raise FastAPIHTTPException(status_code=403, detail="Admin access required")
+             raise HTTPException(status_code=403, detail="Admin required")
+        return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
     except Exception as e:
-        from fastapi import HTTPException as FastAPIHTTPException
-        raise FastAPIHTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+        raise HTTPException(status_code=401, detail=str(e))
 
-    # Returns last 100 logs for admin view
-    return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
-
-# Example simple proxy logic
 @app.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def route_request(service_name: str, path: str, request: Request, background_tasks: BackgroundTasks):
     if service_name not in SERVICES:
         return Response(status_code=404, content="Service not found")
         
     url = f"{SERVICES[service_name]}/{path}"
-    if not path:
-        url = SERVICES[service_name]
     
-    # Exclude specific headers that can cause issues when proxying
-    excluded_headers = ["host", "content-length"]
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded_headers}
+    # FORWARD HEADERS SECURELY
+    headers = dict(request.headers)
+    headers.pop("host", None)
+    headers.pop("content-length", None)
     
     body = await request.body()
     client_ip = request.client.host if request.client else "unknown"
-    
-    # Extract user from JWT if available
     user_email = "Anonymous"
+    
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         try:
             token = auth_header.split(" ")[1]
-            # We only decode, not verify here (verification happens in services)
             payload = jwt.decode(token, options={"verify_signature": False})
             user_email = payload.get("sub", "Unknown")
-        except:
-            pass
+        except: pass
 
-    # Forward the user identity to microservices
     headers["X-User-Email"] = user_email
 
     async with httpx.AsyncClient() as client:
@@ -170,47 +124,17 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
                 headers=headers,
                 content=body,
                 params=request.query_params,
-                timeout=10.0
+                timeout=30.0
             )
             
-            # Queue the background task to log the audit record
-            background_tasks.add_task(
-                save_audit_log,
-                ip_address=client_ip,
-                method=request.method,
-                user_email=user_email,
-                service_name=service_name,
-                path=path,
-                status_code=proxy_response.status_code
-            )
+            background_tasks.add_task(save_audit_log, client_ip, request.method, service_name, path, proxy_response.status_code, user_email)
             
-            # Construct headers for the proxied response
-            resp_headers = {k: v for k, v in proxy_response.headers.items() if k.lower() not in excluded_headers}
-            
-            # Manually inject CORS headers for proxied responses
-            origin = request.headers.get("origin")
-            allowed_origins = [
-                "https://jpshop.puneetdevops.online",
-                "http://jpshop.puneetdevops.online",
-                "https://api.puneetdevops.online",
-                "http://localhost:5173",
-                "http://localhost:3000"
-            ]
-            
-            if origin in allowed_origins:
-                resp_headers["Access-Control-Allow-Origin"] = origin
-                resp_headers["Access-Control-Allow-Credentials"] = "true"
-                resp_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                resp_headers["Access-Control-Allow-Headers"] = "*"
-
             return Response(
                 content=proxy_response.content,
                 status_code=proxy_response.status_code,
-                headers=resp_headers
+                headers=dict(proxy_response.headers)
             )
-        except httpx.RequestError as e:
-            # Service unavailable fallback
-            return Response(status_code=503, content=f"Service unavailable: {str(e)}")
+        except Exception as e:
+            return Response(status_code=503, content=f"Gateway Error: {str(e)}")
 
-# Expose metrics for Prometheus
 Instrumentator().instrument(app).expose(app)
