@@ -20,6 +20,7 @@ from models import AuditLog
 Base.metadata.create_all(bind=engine)
 
 # Service URLs
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://jpshop.puneetdevops.online")
 API_HOST = os.getenv("API_HOST", "api.puneetdevops.online")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8002")
@@ -48,8 +49,8 @@ app = FastAPI(title="API Gateway")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://jpshop.puneetdevops.online",
-        "http://jpshop.puneetdevops.online",
+        FRONTEND_URL,
+        FRONTEND_URL.replace("https://", "http://"),
         "https://api.puneetdevops.online",
         "http://localhost:5173",
         "http://localhost:3000"
@@ -58,6 +59,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def forward_proto_middleware(request: Request, call_next):
+    if request.headers.get("x-forwarded-proto") == "https":
+        request.scope["scheme"] = "https"
+    return await call_next(request)
 
 def save_audit_log(ip_address: str, method: str, service_name: str, path: str, status_code: int, user_email: str = None):
     db = SessionLocal()
