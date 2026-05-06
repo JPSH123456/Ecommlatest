@@ -47,7 +47,13 @@ app = FastAPI(title="API Gateway")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Simplified for troubleshooting
+    allow_origins=[
+        "https://jpshop.puneetdevops.online",
+        "http://jpshop.puneetdevops.online",
+        "https://api.puneetdevops.online",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -129,10 +135,14 @@ async def route_request(service_name: str, path: str, request: Request, backgrou
             
             background_tasks.add_task(save_audit_log, client_ip, request.method, service_name, path, proxy_response.status_code, user_email)
             
+            # Remove CORS headers from proxy response to avoid conflict with Gateway's CORSMiddleware
+            excluded_cors_headers = ["access-control-allow-origin", "access-control-allow-credentials", "access-control-allow-methods", "access-control-allow-headers"]
+            proxy_headers = {k: v for k, v in proxy_response.headers.items() if k.lower() not in excluded_cors_headers}
+            
             return Response(
                 content=proxy_response.content,
                 status_code=proxy_response.status_code,
-                headers=dict(proxy_response.headers)
+                headers=proxy_headers
             )
         except Exception as e:
             return Response(status_code=503, content=f"Gateway Error: {str(e)}")

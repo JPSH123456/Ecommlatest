@@ -7,7 +7,7 @@
 
 set -e  # Exit on error
 
-ACR="aksacr.azurecr.io"
+ACR="azacr.azurecr.io"
 VERSION="v1"
 PLATFORM="linux/amd64"
 
