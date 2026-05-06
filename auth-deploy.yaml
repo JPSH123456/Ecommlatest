@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - env:
-        - name: DATABASE_URL
+        - name: DB-URL
           value: Driver={ODBC Driver 18 for SQL Server};Server=tcp:msqlsvc.database.windows.net,1433;Database=TestCase;Uid=abhilash;Pwd=admin@123@;Encrypt=yes;TrustServerCertificate=no;Connection
             Timeout=30;
         - name: APPLICATIONINSIGHTS_CONNECTION_STRING

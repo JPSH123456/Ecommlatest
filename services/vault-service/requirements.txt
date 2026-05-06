@@ -7,3 +7,5 @@ prometheus-fastapi-instrumentator==6.1.0
 python-dotenv==1.0.0
 azure-monitor-opentelemetry
 
+azure-identity
+azure-keyvault-secrets
