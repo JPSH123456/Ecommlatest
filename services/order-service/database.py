@@ -1,6 +1,7 @@
 import os
 import urllib.parse
-from sqlalchemy import create_engine
+import struct
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 def parse_password_from_url(url: str):
@@ -35,24 +36,57 @@ def get_db_url():
     if url:
         if "Driver=" in url or ";" in url:
             import urllib.parse
-            if "TrustServerCertificate=no" in url:
-                url = url.replace("TrustServerCertificate=no", "TrustServerCertificate=yes")
-            elif "TrustServerCertificate=" not in url:
-                url += ";TrustServerCertificate=yes"
+            # Respect user preference for TrustServerCertificate=no for Azure SQL
+            if "database.windows.net" in url:
+                if "TrustServerCertificate=yes" in url:
+                    url = url.replace("TrustServerCertificate=yes", "TrustServerCertificate=no")
+                elif "TrustServerCertificate=" not in url:
+                    url += ";TrustServerCertificate=no"
+            else:
+                # For non-Azure, keep TrustServerCertificate=yes if already there or default
+                if "TrustServerCertificate=no" in url:
+                    url = url.replace("TrustServerCertificate=no", "TrustServerCertificate=yes")
+                elif "TrustServerCertificate=" not in url:
+                    url += ";TrustServerCertificate=yes"
+            
             params = urllib.parse.quote_plus(url)
             return f"mssql+pyodbc:///?odbc_connect={params}"
         return url
 
     import urllib.parse
     user = os.getenv("DB_USER", "SA")
-    pwd = urllib.parse.quote_plus(os.getenv("DB_PASSWORD", ""))
+    password = os.getenv("DB_PASSWORD", "")
     server = os.getenv("DB_SERVER", "localhost")
     port = os.getenv("DB_PORT", "1433")
     db_name = os.getenv("DB_NAME", "master")
+    
+    # If it's Azure SQL and no password is provided, we'll use token auth later in the event listener
+    if "database.windows.net" in server and not password:
+        # For token auth, we don't include user/pwd in the URL
+        return f"mssql+pyodbc://{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no"
+    
+    pwd = urllib.parse.quote_plus(password)
     return f"mssql+pyodbc://{user}:{pwd}@{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
 
 SQLALCHEMY_DATABASE_URL = get_db_url()
 engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
+
+@event.listens_for(engine, "do_connect")
+def provide_token(dialect, conn_rec, cargs, cparams):
+    # Only inject token if we are using MS SQL and it's an Azure SQL Server
+    conn_str = cargs[0] if cargs else ""
+    if "database.windows.net" in conn_str and ("ODBC Driver 18" in conn_str or "msodbcsql18" in conn_str.lower()):
+        # Only inject if no password is provided in the connection string
+        if "Pwd=" not in conn_str and "password=" not in conn_str.lower():
+            from azure.identity import DefaultAzureCredential
+            credential = DefaultAzureCredential()
+            token = credential.get_token("https://database.windows.net/.default").token
+            token_bytes = token.encode("utf-16-le")
+            token_struct = struct.pack(f'<I{len(token_bytes)}s', len(token_bytes), token_bytes)
+            
+            # SQL_COPT_SS_ACCESS_TOKEN = 1256
+            cparams["attrs_before"] = {1256: token_struct}
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
