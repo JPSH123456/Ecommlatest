@@ -62,8 +62,13 @@ def get_db_url():
     
     # If it's Azure SQL and no password is provided, we'll use token auth later in the event listener
     if "database.windows.net" in server and not password:
-        # For token auth, we don't include user/pwd in the URL
-        return f"mssql+pyodbc://{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no"
+        # For token auth, we MUST use a clean connection string without any User/Password fields
+        # Using odbc_connect format to ensure SQLAlchemy doesn't add default credentials
+        driver = "ODBC Driver 18 for SQL Server"
+        params = f"Driver={{{driver}}};Server=tcp:{server},{port};Database={db_name};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+        import urllib.parse
+        quoted_params = urllib.parse.quote_plus(params)
+        return f"mssql+pyodbc:///?odbc_connect={quoted_params}"
     
     pwd = urllib.parse.quote_plus(password)
     return f"mssql+pyodbc://{user}:{pwd}@{server}:{port}/{db_name}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
