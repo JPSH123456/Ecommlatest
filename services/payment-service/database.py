@@ -17,10 +17,10 @@ def parse_password_from_url(url: str):
     return ""
 
 def get_db_url():
-    url = os.getenv("DB-URL")
-    if not url and os.path.exists("/data/DB-URL"):
+    url = os.getenv("DBURL")
+    if not url and os.path.exists("/data/DBURL"):
         try:
-            with open("/data/DB-URL", "r") as f:
+            with open("/data/DBURL", "r") as f:
                 url = f.read().strip().replace("\n", "").replace("\r", "")
         except Exception: pass
     if not url:
@@ -30,7 +30,7 @@ def get_db_url():
                 from azure.identity import DefaultAzureCredential
                 from azure.keyvault.secrets import SecretClient
                 client = SecretClient(vault_url=kv_url, credential=DefaultAzureCredential())
-                url = client.get_secret("DB-URL").value
+                url = client.get_secret("DBURL").value
             except Exception: pass
 
     if url:
