@@ -20,8 +20,8 @@ from models import AuditLog
 Base.metadata.create_all(bind=engine)
 
 # Service URLs
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://jpshop.puneetdevops.online")
-API_HOST = os.getenv("API_HOST", "api.puneetdevops.online")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://jponline.space")
+API_HOST = os.getenv("API_HOST", "api.jponline.space")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8002")
 PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://product-service:8003")
